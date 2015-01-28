@@ -1,0 +1,10 @@
+# User-specific files
+*.suo
+*.user
+
+# Intellisense cache files
+*.sdf
+*.opensdf
+
+# Build results
+build/
