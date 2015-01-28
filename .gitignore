@@ -7,4 +7,5 @@
 *.opensdf
 
 # Build results
-build/
+bin/
+obj/
