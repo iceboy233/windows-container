@@ -8,6 +8,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{ECCD9906-8B0C-445E-A7D7-935253EF1037}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test_spawn_cmd", "tests\test_spawn_cmd\test_spawn_cmd.vcxproj", "{6B32BDA9-CF0E-4D79-8DE9-EA8C05E40C8D}"
+	ProjectSection(ProjectDependencies) = postProject
+		{E2E27BFD-4837-4265-8F0F-F1A39CA7BCB2} = {E2E27BFD-4837-4265-8F0F-F1A39CA7BCB2}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -7,5 +7,6 @@
 *.opensdf
 
 # Build results
-bin/
-obj/
+Debug/
+Release/
+x64/
