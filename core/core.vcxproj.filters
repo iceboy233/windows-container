@@ -3,9 +3,11 @@
   <ItemGroup>
     <ClInclude Include="sid.h" />
     <ClInclude Include="container.h" />
+    <ClInclude Include="policy.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="sid.cc" />
     <ClCompile Include="container.cc" />
+    <ClCompile Include="policy.cc" />
   </ItemGroup>
 </Project>

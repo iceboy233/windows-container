@@ -8,12 +8,12 @@
 namespace winc {
 
 // Operation result codes returned by the windows container API.
-// Additional information can be retrieved by calling GetLastError()
 enum ResultCode {
   WINC_OK = 0,
-  WINC_INVALID_SID_TYPE = 1,
-  WINC_OS_NOT_SUPPORTED = 2,
-  WINC_PRIVILEGE_NOT_HELD = 3,
+  WINC_INVALID_SID = 1,
+  WINC_INVALID_TOKEN = 2,
+  WINC_SPAWN_ERROR = 3,
+  WINC_OS_NOT_SUPPORTED = 4,
 };
 
 }

@@ -13,6 +13,9 @@ namespace winc {
 
 class Sid {
 public:
+  // Create SID object from existing raw SID data
+  void Init(SID *data);
+
   // Create SID object from well-known type identifier
   ResultCode Init(WELL_KNOWN_SID_TYPE type);
 
