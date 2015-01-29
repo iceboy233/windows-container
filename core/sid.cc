@@ -13,7 +13,7 @@ void Sid::Init(SID *data) {
 ResultCode Sid::Init(WELL_KNOWN_SID_TYPE type) {
   DWORD size = sizeof(data_);
   if (!::CreateWellKnownSid(type, NULL, data_, &size))
-    return WINC_INVALID_SID;
+    return WINC_ERROR_SID;
   return WINC_OK;
 }
 

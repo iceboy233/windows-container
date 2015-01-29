@@ -10,10 +10,11 @@ namespace winc {
 // Operation result codes returned by the windows container API.
 enum ResultCode {
   WINC_OK = 0,
-  WINC_INVALID_SID = 1,
-  WINC_INVALID_TOKEN = 2,
-  WINC_SPAWN_ERROR = 3,
-  WINC_OS_NOT_SUPPORTED = 4,
+  WINC_ERROR_SID = 1,
+  WINC_ERROR_TOKEN = 2,
+  WINC_ERROR_SPAWN = 3,
+  WINC_ERROR_DESKTOP = 4,
+  WINC_OS_NOT_SUPPORTED = 5,
 };
 
 }

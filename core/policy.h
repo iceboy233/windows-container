@@ -6,18 +6,25 @@
 #define WINC_CORE_POLICY_H_
 
 #include <Windows.h>
+#include <memory>
 #include <vector>
 
 #include "core/sid.h"
+#include "core/desktop.h"
 
 namespace winc {
 
 class Policy {
 public:
   Policy()
-    : disable_max_privilege_(false)
+    : use_alternate_desktop_(false)
+    , disable_max_privilege_(false)
     , restrict_sid_logon_session_(false)
     {}
+
+  void UseAlternateDesktop() {
+    use_alternate_desktop_ = true;
+  }
 
   void DisableMaxPrivilege() {
     disable_max_privilege_ = true;
@@ -27,21 +34,14 @@ public:
     restrict_sid_logon_session_ = true;
   }
 
-  ResultCode RestrictSid(WELL_KNOWN_SID_TYPE type) {
-    restricted_sids_.push_back(Sid());
-    ResultCode rc = restricted_sids_.back().Init(type);
-    if (rc != WINC_OK)
-      restricted_sids_.pop_back();
-    return rc;
-  }
-
-  void RestrictSid(const Sid &sid) {
-    restricted_sids_.push_back(sid);
-  }
+  ResultCode RestrictSid(WELL_KNOWN_SID_TYPE type);
+  void RestrictSid(const Sid &sid);
 
   ResultCode CreateRestrictedToken(HANDLE *out_token);
+  ResultCode CreateTargetDesktop(std::unique_ptr<Desktop> *out_desktop);
 
 private:
+  bool use_alternate_desktop_;
   bool disable_max_privilege_;
   bool restrict_sid_logon_session_;
   std::vector<Sid> restricted_sids_;

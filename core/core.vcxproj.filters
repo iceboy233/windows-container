@@ -4,10 +4,12 @@
     <ClInclude Include="sid.h" />
     <ClInclude Include="container.h" />
     <ClInclude Include="policy.h" />
+    <ClInclude Include="desktop.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="sid.cc" />
     <ClCompile Include="container.cc" />
     <ClCompile Include="policy.cc" />
+    <ClCompile Include="desktop.cc" />
   </ItemGroup>
 </Project>

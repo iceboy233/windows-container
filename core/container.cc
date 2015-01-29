@@ -6,18 +6,34 @@
 
 #include <Windows.h>
 #include <memory>
+#include <string>
+#include <utility>
 
+#include <winc_types.h>
 #include "core/policy.h"
+#include "core/desktop.h"
+#include "core/sid.h"
 
-using namespace std;
+using std::make_unique;
+using std::move;
+using std::wstring;
+using std::unique_ptr;
+using winc::ResultCode;
+using winc::Sid;
+
+namespace {
+
+ResultCode AdjustUserObjectAccessControl(HANDLE user_object,
+  const Sid &sid, ACCESS_MASK access) {
+  return winc::WINC_OK;
+}
+
+}
 
 namespace winc {
 
-Container::Container() {
-}
-
-Container::~Container() {
-}
+Container::Container() =default;
+Container::~Container() =default;
 
 ResultCode Container::Spawn(const wchar_t *exe_path,
                             wchar_t *command_line) {
@@ -27,8 +43,23 @@ ResultCode Container::Spawn(const wchar_t *exe_path,
   ResultCode rc = policy_->CreateRestrictedToken(&restricted_token);
   if (rc != WINC_OK)
     return rc;
+  unique_ptr<Desktop> desktop;
+  rc = policy_->CreateTargetDesktop(&desktop);
+  if (rc != WINC_OK)
+    return rc;
+
+  // 
 
   STARTUPINFOW si = {0};
+  si.cb = sizeof(si);
+  wstring desktop_name;
+  if (!desktop->IsDefaultDesktop()) {
+    rc = desktop->GetFullName(&desktop_name);
+    if (rc != WINC_OK)
+      return rc;
+    si.lpDesktop = const_cast<wchar_t *>(desktop_name.c_str());
+  }
+
   PROCESS_INFORMATION pi;
   BOOL success = ::CreateProcessAsUserW(restricted_token,
     exe_path, command_line,
@@ -36,7 +67,7 @@ ResultCode Container::Spawn(const wchar_t *exe_path,
 
   ::CloseHandle(restricted_token);
   if (!success)
-    return WINC_SPAWN_ERROR;
+    return WINC_ERROR_SPAWN;
 
   // TODO(iceboy): Not implemented
   ::CloseHandle(pi.hProcess);
@@ -46,6 +77,7 @@ ResultCode Container::Spawn(const wchar_t *exe_path,
 
 void Container::CreateDefaultPolicy() {
   auto policy = make_unique<Policy>();
+  policy->UseAlternateDesktop();
   policy->DisableMaxPrivilege();
   policy->RestrictSidLogonSession();
   policy->RestrictSid(WinBuiltinUsersSid);

@@ -5,9 +5,12 @@
 #include "core/policy.h"
 
 #include <malloc.h>
+#include <memory>
 #include <vector>
 
-using namespace std;
+using std::make_unique;
+using std::unique_ptr;
+using std::vector;
 
 namespace {
 
@@ -36,6 +39,18 @@ bool GetSidLogonSession(HANDLE token, winc::Sid *sid) {
 
 namespace winc {
 
+ResultCode Policy::RestrictSid(WELL_KNOWN_SID_TYPE type) {
+  restricted_sids_.push_back(Sid());
+  ResultCode rc = restricted_sids_.back().Init(type);
+  if (rc != WINC_OK)
+    restricted_sids_.pop_back();
+  return rc;
+}
+
+void Policy::RestrictSid(const Sid &sid) {
+  restricted_sids_.push_back(sid);
+}
+
 ResultCode Policy::CreateRestrictedToken(HANDLE *out_token) {
   // TODO(iceboy): Cache the token if possible
   // TODO(iceboy): Use the logon token if present
@@ -44,14 +59,14 @@ ResultCode Policy::CreateRestrictedToken(HANDLE *out_token) {
   if (!::OpenProcessToken(::GetCurrentProcess(),
     TOKEN_QUERY | TOKEN_DUPLICATE | TOKEN_ASSIGN_PRIMARY,
     &effective_token))
-    return WINC_INVALID_TOKEN;
+    return WINC_ERROR_TOKEN;
 
   if (restrict_sid_logon_session_) {
     restricted_sids_.push_back(Sid());
     if (!GetSidLogonSession(effective_token, &restricted_sids_.back())) {
       restricted_sids_.pop_back();
       ::CloseHandle(effective_token);
-      return WINC_INVALID_SID;
+      return WINC_ERROR_TOKEN;
     }
   }
 
@@ -74,9 +89,22 @@ ResultCode Policy::CreateRestrictedToken(HANDLE *out_token) {
   ::CloseHandle(effective_token);
 
   if (!success)
-    return WINC_INVALID_TOKEN;
+    return WINC_ERROR_TOKEN;
 
   *out_token = restricted_token;
+  return WINC_OK;
+}
+
+ResultCode Policy::CreateTargetDesktop(unique_ptr<Desktop> *out_desktop) {
+  if (!use_alternate_desktop_) {
+    *out_desktop = make_unique<DefaultDesktop>();
+  } else {
+    auto desktop = make_unique<AlternateDesktop>();
+    ResultCode rc = desktop->Init();
+    if (rc != WINC_OK)
+      return rc;
+    *out_desktop = move(desktop);
+  }
   return WINC_OK;
 }
 

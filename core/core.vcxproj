@@ -12,10 +12,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="container.h" />
+    <ClInclude Include="desktop.h" />
     <ClInclude Include="sid.h" />
     <ClInclude Include="policy.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="desktop.cc" />
     <ClCompile Include="container.cc" />
     <ClCompile Include="policy.cc" />
     <ClCompile Include="sid.cc" />
