@@ -20,7 +20,7 @@ public:
   ResultCode Spawn(const wchar_t *exe_path,
                    wchar_t *command_line = nullptr/*,
                    std handles,
-                   std::unique_ptr<TargetProcess> *out_process*/);
+                   TargetProcess *out_process*/);
   
   const Policy *policy();
   void set_policy(std::unique_ptr<Policy> &policy);

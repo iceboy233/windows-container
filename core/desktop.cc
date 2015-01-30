@@ -4,7 +4,6 @@
 
 #include "core/desktop.h"
 
-#include <Aclapi.h>
 #include <malloc.h>
 #include <string>
 #include <cstring>

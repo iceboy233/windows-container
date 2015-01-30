@@ -19,7 +19,6 @@ public:
   Policy()
     : use_alternate_desktop_(false)
     , disable_max_privilege_(false)
-    , restrict_sid_logon_session_(false)
     {}
 
   void UseAlternateDesktop() {
@@ -30,20 +29,20 @@ public:
     disable_max_privilege_ = true;
   }
 
-  void RestrictSidLogonSession() {
-    restrict_sid_logon_session_ = true;
-  }
+  ResultCode GetSidLogonSession(Sid *out_sid);
 
   ResultCode RestrictSid(WELL_KNOWN_SID_TYPE type);
   void RestrictSid(const Sid &sid);
 
   ResultCode CreateRestrictedToken(HANDLE *out_token);
-  ResultCode CreateTargetDesktop(std::unique_ptr<Desktop> *out_desktop);
+  ResultCode CreateTargetDesktop(Desktop **out_desktop);
+
+private:
+  bool CreateEffectiveToken(HANDLE *out_token);
 
 private:
   bool use_alternate_desktop_;
   bool disable_max_privilege_;
-  bool restrict_sid_logon_session_;
   std::vector<Sid> restricted_sids_;
 };
 
