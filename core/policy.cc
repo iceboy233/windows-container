@@ -8,6 +8,9 @@
 #include <memory>
 #include <vector>
 
+#include "core/desktop.h"
+#include "core/job_object.h"
+
 using std::make_unique;
 using std::vector;
 
@@ -98,6 +101,22 @@ ResultCode Policy::CreateTargetDesktop(Desktop **out_desktop) {
       return rc;
     *out_desktop = desktop.release();
   }
+  return WINC_OK;
+}
+
+ResultCode Policy::CreateTargetJobObject(JobObject **out_job) {
+  JobObject *job = new JobObject;
+  ResultCode rc = job->Init();
+  if (rc != WINC_OK)
+    return rc;
+
+  // TODO(iceboy): Configure the job object
+  JOBOBJECT_EXTENDED_LIMIT_INFORMATION limit;
+  job->GetLimit(&limit);
+  limit.BasicLimitInformation.LimitFlags |= JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+  job->SetLimit(limit);
+
+  *out_job = job;
   return WINC_OK;
 }
 

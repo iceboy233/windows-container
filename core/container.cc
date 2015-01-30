@@ -5,13 +5,17 @@
 #include "core/container.h"
 
 #include <Windows.h>
+#include <memory>
 #include <string>
 
 #include <winc_types.h>
 #include "core/policy.h"
 #include "core/desktop.h"
 #include "core/sid.h"
+#include "core/job_object.h"
+#include "core/util.h"
 
+using std::unique_ptr;
 using std::wstring;
 using winc::Sid;
 
@@ -21,51 +25,71 @@ Container::Container() =default;
 Container::~Container() =default;
 
 ResultCode Container::Spawn(const wchar_t *exe_path,
-                            wchar_t *command_line) {
+                            SpawnOptions *options OPTIONAL,
+                            IoHandles *io_handles OPTIONAL,
+                            TargetProcess **out_process) {
   if (!policy_)
-    CreateDefaultPolicy();
+    policy_.reset(CreateDefaultPolicy());
   HANDLE restricted_token;
   ResultCode rc = policy_->CreateRestrictedToken(&restricted_token);
   if (rc != WINC_OK)
     return rc;
+  unique_handle restricted_token_holder(restricted_token);
+
   Desktop *desktop;
   rc = policy_->CreateTargetDesktop(&desktop);
   if (rc != WINC_OK)
     return rc;
+  unique_ptr<Desktop> desktop_holder(desktop);
+
+  JobObject *job_object;
+  rc = policy_->CreateTargetJobObject(&job_object);
+  if (rc != WINC_OK)
+    return rc;
+  unique_ptr<JobObject> job_object_holder(job_object);
 
   STARTUPINFOW si = {0};
   si.cb = sizeof(si);
+  si.dwFlags = STARTF_FORCEOFFFEEDBACK;
+  if (io_handles) {
+    si.dwFlags   |= STARTF_USESTDHANDLES;
+    si.hStdInput  = io_handles->stdin_handle;
+    si.hStdOutput = io_handles->stdout_handle;
+    si.hStdError  = io_handles->stderr_handle;
+  }
   wstring desktop_name;
   if (!desktop->IsDefaultDesktop()) {
     rc = desktop->GetFullName(&desktop_name);
-    if (rc != WINC_OK) {
-      delete desktop;
+    if (rc != WINC_OK)
       return rc;
-    }
     si.lpDesktop = const_cast<wchar_t *>(desktop_name.c_str());
   }
 
   PROCESS_INFORMATION pi;
   BOOL success = ::CreateProcessAsUserW(restricted_token,
-    exe_path, command_line, NULL, NULL, FALSE,
-    STARTF_FORCEOFFFEEDBACK | CREATE_BREAKAWAY_FROM_JOB,
+    exe_path,
+    options ? options->command_line : NULL,
+    NULL, NULL, FALSE,
+    CREATE_BREAKAWAY_FROM_JOB | CREATE_SUSPENDED,
     NULL, NULL, &si, &pi);
-
-  ::CloseHandle(restricted_token);
-  if (!success) {
-    delete desktop;
+  if (!success)
     return WINC_ERROR_SPAWN;
+  unique_handle process_holder(pi.hProcess);
+  unique_handle thread_holder(pi.hThread);
+
+  rc = job_object->AssignProcess(pi.hProcess);
+  if (rc != WINC_OK) {
+    ::TerminateProcess(pi.hProcess, 1);
+    return rc;
   }
 
   // TODO(iceboy): Not implemented
-  ::CloseHandle(pi.hThread);
+  ::ResumeThread(pi.hThread);
   ::WaitForSingleObject(pi.hProcess, INFINITE);
-  ::CloseHandle(pi.hProcess);
-  delete desktop;
   return WINC_OK;
 }
 
-void Container::CreateDefaultPolicy() {
+Policy *Container::CreateDefaultPolicy() {
   Policy *policy = new Policy;
   policy->UseAlternateDesktop();
   policy->DisableMaxPrivilege();
@@ -74,7 +98,7 @@ void Container::CreateDefaultPolicy() {
   policy->RestrictSid(logon_sid);
   policy->RestrictSid(WinBuiltinUsersSid);
   policy->RestrictSid(WinWorldSid);
-  policy_.reset(policy);
+  return policy;
 }
 
 }

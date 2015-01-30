@@ -8,11 +8,13 @@
 #include <winc.h>
 
 using winc::Container;
+using winc::TargetProcess;
 
 int main() {
   Container c;
   wchar_t cmd_path[MAX_PATH];
   ::GetSystemDirectoryW(cmd_path, MAX_PATH);
   ::wcscat_s(cmd_path, L"\\cmd.exe");
-  c.Spawn(cmd_path);
+  TargetProcess *process;
+  c.Spawn(cmd_path, nullptr, nullptr, &process);
 }

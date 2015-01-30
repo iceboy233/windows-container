@@ -10,9 +10,11 @@
 #include <vector>
 
 #include "core/sid.h"
-#include "core/desktop.h"
 
 namespace winc {
+
+class Desktop;
+class JobObject;
 
 class Policy {
 public:
@@ -36,6 +38,7 @@ public:
 
   ResultCode CreateRestrictedToken(HANDLE *out_token);
   ResultCode CreateTargetDesktop(Desktop **out_desktop);
+  ResultCode CreateTargetJobObject(JobObject **out_job);
 
 private:
   bool CreateEffectiveToken(HANDLE *out_token);
