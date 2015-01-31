@@ -10,6 +10,7 @@
 #include <cstdint>
 
 #include <winc_types.h>
+#include "core/util.h"
 
 namespace winc {
 
@@ -57,15 +58,30 @@ private:
   friend class Container;
   TargetProcess(std::unique_ptr<Desktop> &desktop,
                 std::unique_ptr<JobObject> &job_object,
-                HANDLE process_handle);
+                DWORD process_id, DWORD thread_id,
+                unique_handle &process_handle,
+                unique_handle &thread_handle);
 public:
   ~TargetProcess();
-  void Wait();
+
+  DWORD process_id() {
+    return process_id_;
+  }
+
+  DWORD thread_id() {
+    return thread_id_;
+  }
+
+  // TODO(iceboy): monitor, status, async iface?
+  ResultCode Run();
 
 private:
   std::unique_ptr<Desktop> desktop_;
   std::unique_ptr<JobObject> job_object_;
-  HANDLE process_handle_;
+  DWORD process_id_;
+  DWORD thread_id_;
+  unique_handle process_handle_;
+  unique_handle thread_handle_;
 
 private:
   TargetProcess(const TargetProcess &) =delete;

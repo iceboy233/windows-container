@@ -21,6 +21,9 @@ public:
   Policy()
     : use_alternate_desktop_(false)
     , disable_max_privilege_(false)
+    , job_object_basic_limit_(JOB_OBJECT_LIMIT_DIE_ON_UNHANDLED_EXCEPTION |
+                               JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE)
+    , job_object_ui_limit_(0)
     {}
 
   void UseAlternateDesktop() {
@@ -36,6 +39,14 @@ public:
   ResultCode RestrictSid(WELL_KNOWN_SID_TYPE type);
   void RestrictSid(const Sid &sid);
 
+  void SetJobObjectBasicLimit(DWORD basic_limit) {
+    job_object_basic_limit_ |= basic_limit;
+  }
+
+  void SetJobObjectUILimit(DWORD ui_limit) {
+    job_object_ui_limit_ |= ui_limit;
+  }
+
   ResultCode CreateRestrictedToken(HANDLE *out_token);
   ResultCode CreateTargetDesktop(Desktop **out_desktop);
   ResultCode CreateTargetJobObject(JobObject **out_job);
@@ -46,6 +57,8 @@ private:
 private:
   bool use_alternate_desktop_;
   bool disable_max_privilege_;
+  DWORD job_object_basic_limit_;
+  DWORD job_object_ui_limit_;
   std::vector<Sid> restricted_sids_;
 };
 

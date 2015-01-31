@@ -24,14 +24,14 @@ ResultCode JobObject::AssignProcess(HANDLE process) {
   return WINC_OK;
 }
 
-ResultCode JobObject::GetLimit(JOBOBJECT_EXTENDED_LIMIT_INFORMATION *limit) {
+ResultCode JobObject::GetBasicLimit(JOBOBJECT_EXTENDED_LIMIT_INFORMATION *limit) {
   if (!::QueryInformationJobObject(job_, JobObjectExtendedLimitInformation,
       limit, sizeof(JOBOBJECT_EXTENDED_LIMIT_INFORMATION), NULL))
     return WINC_ERROR_JOB_OBJECT;
   return WINC_OK;
 }
 
-ResultCode JobObject::SetLimit(
+ResultCode JobObject::SetBasicLimit(
     const JOBOBJECT_EXTENDED_LIMIT_INFORMATION &limit) {
   if (!::SetInformationJobObject(job_, JobObjectExtendedLimitInformation,
       const_cast<JOBOBJECT_EXTENDED_LIMIT_INFORMATION *>(&limit),

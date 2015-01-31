@@ -110,11 +110,20 @@ ResultCode Policy::CreateTargetJobObject(JobObject **out_job) {
   if (rc != WINC_OK)
     return rc;
 
-  // TODO(iceboy): Configure the job object
-  JOBOBJECT_EXTENDED_LIMIT_INFORMATION limit;
-  job->GetLimit(&limit);
-  limit.BasicLimitInformation.LimitFlags |= JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
-  job->SetLimit(limit);
+  {
+    JOBOBJECT_EXTENDED_LIMIT_INFORMATION limit = {};
+    limit.BasicLimitInformation.LimitFlags = job_object_basic_limit_;
+    rc = job->SetBasicLimit(limit);
+    if (rc != WINC_OK)
+      return rc;
+  }
+  {
+    JOBOBJECT_BASIC_UI_RESTRICTIONS limit = {};
+    limit.UIRestrictionsClass = job_object_ui_limit_;
+    rc = job->SetUILimit(limit);
+    if (rc != WINC_OK)
+      return rc;
+  }
 
   *out_job = job;
   return WINC_OK;

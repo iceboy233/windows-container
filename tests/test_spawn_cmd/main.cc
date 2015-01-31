@@ -4,11 +4,11 @@
 
 #include <Windows.h>
 #include <cstring>
+#include <cstdio>
 
 #include <winc.h>
 
-using winc::Container;
-using winc::TargetProcess;
+using namespace winc;
 
 int main() {
   Container c;
@@ -16,5 +16,13 @@ int main() {
   ::GetSystemDirectoryW(cmd_path, MAX_PATH);
   ::wcscat_s(cmd_path, L"\\cmd.exe");
   TargetProcess *process;
-  c.Spawn(cmd_path, nullptr, nullptr, &process);
+  ResultCode rc = c.Spawn(cmd_path, nullptr, nullptr, &process);
+  if (rc != WINC_OK) {
+    fprintf(stderr, "Spawn error %d\n", rc);
+    return 1;
+  }
+  fprintf(stderr, "Process %d created\n", process->process_id());
+  process->Run();
+  fprintf(stderr, "Process %d exited\n", process->process_id());
+  delete process;
 }

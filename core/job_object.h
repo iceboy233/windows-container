@@ -16,8 +16,8 @@ public:
   ~JobObject();
   ResultCode Init();
   ResultCode AssignProcess(HANDLE process);
-  ResultCode GetLimit(JOBOBJECT_EXTENDED_LIMIT_INFORMATION *limit);
-  ResultCode SetLimit(const JOBOBJECT_EXTENDED_LIMIT_INFORMATION &limit);
+  ResultCode GetBasicLimit(JOBOBJECT_EXTENDED_LIMIT_INFORMATION *limit);
+  ResultCode SetBasicLimit(const JOBOBJECT_EXTENDED_LIMIT_INFORMATION &limit);
   ResultCode GetUILimit(JOBOBJECT_BASIC_UI_RESTRICTIONS *ui_limit);
   ResultCode SetUILimit(const JOBOBJECT_BASIC_UI_RESTRICTIONS &ui_limit);
 

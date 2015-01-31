@@ -48,7 +48,7 @@ ResultCode Container::Spawn(const wchar_t *exe_path,
     return rc;
   unique_ptr<JobObject> job_object_holder(job_object);
 
-  STARTUPINFOW si = {0};
+  STARTUPINFOW si = {};
   si.cb = sizeof(si);
   si.dwFlags = STARTF_FORCEOFFFEEDBACK;
   if (io_handles) {
@@ -83,9 +83,9 @@ ResultCode Container::Spawn(const wchar_t *exe_path,
     return rc;
   }
 
-  // TODO(iceboy): Not implemented
-  ::ResumeThread(pi.hThread);
-  ::WaitForSingleObject(pi.hProcess, INFINITE);
+  *out_process = new TargetProcess(desktop_holder, job_object_holder,
+                                   pi.dwProcessId, pi.dwThreadId,
+                                   process_holder, thread_holder);
   return WINC_OK;
 }
 
@@ -98,7 +98,38 @@ Policy *Container::CreateDefaultPolicy() {
   policy->RestrictSid(logon_sid);
   policy->RestrictSid(WinBuiltinUsersSid);
   policy->RestrictSid(WinWorldSid);
+  policy->SetJobObjectUILimit(JOB_OBJECT_UILIMIT_HANDLES
+                            | JOB_OBJECT_UILIMIT_READCLIPBOARD
+                            | JOB_OBJECT_UILIMIT_WRITECLIPBOARD
+                            | JOB_OBJECT_UILIMIT_SYSTEMPARAMETERS
+                            | JOB_OBJECT_UILIMIT_DISPLAYSETTINGS
+                            | JOB_OBJECT_UILIMIT_GLOBALATOMS
+                            | JOB_OBJECT_UILIMIT_DESKTOP
+                            | JOB_OBJECT_UILIMIT_EXITWINDOWS);
   return policy;
+}
+
+TargetProcess::TargetProcess(unique_ptr<Desktop> &desktop,
+                             unique_ptr<JobObject> &job_object,
+                             DWORD process_id, DWORD thread_id,
+                             unique_handle &process_handle,
+                             unique_handle &thread_handle)
+  : desktop_(move(desktop))
+  , job_object_(move(job_object))
+  , process_id_(process_id)
+  , thread_id_(thread_id)
+  , process_handle_(move(process_handle))
+  , thread_handle_(move(thread_handle))
+  {}
+
+TargetProcess::~TargetProcess() =default;
+
+ResultCode TargetProcess::Run() {
+  if (::ResumeThread(thread_handle_.get()) == static_cast<DWORD>(-1))
+    return WINC_ERROR_RUN;
+  if (::WaitForSingleObject(process_handle_.get(), INFINITE) == WAIT_FAILED)
+    return WINC_ERROR_RUN;
+  return WINC_OK;
 }
 
 }
