@@ -41,10 +41,10 @@ public:
 
 class AlternateDesktop : public DesktopWithDefaultWinsta {
 public:
-  AlternateDesktop() =default;
+  AlternateDesktop();
   virtual ~AlternateDesktop();
 
-  ResultCode Init();
+  ResultCode Init(DWORD access);
 
   virtual bool IsDefaultDesktop() {
     return false;

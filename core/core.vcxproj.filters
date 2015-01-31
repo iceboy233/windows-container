@@ -7,6 +7,7 @@
     <ClInclude Include="desktop.h" />
     <ClInclude Include="job_object.h" />
     <ClInclude Include="util.h" />
+    <ClInclude Include="logon.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="sid.cc" />
@@ -15,5 +16,6 @@
     <ClCompile Include="desktop.cc" />
     <ClCompile Include="job_object.cc" />
     <ClCompile Include="util.cpp" />
+    <ClCompile Include="logon.cc" />
   </ItemGroup>
 </Project>

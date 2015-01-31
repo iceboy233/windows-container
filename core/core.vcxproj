@@ -14,6 +14,7 @@
     <ClInclude Include="container.h" />
     <ClInclude Include="desktop.h" />
     <ClInclude Include="job_object.h" />
+    <ClInclude Include="logon.h" />
     <ClInclude Include="sid.h" />
     <ClInclude Include="policy.h" />
     <ClInclude Include="util.h" />
@@ -22,6 +23,7 @@
     <ClCompile Include="desktop.cc" />
     <ClCompile Include="container.cc" />
     <ClCompile Include="job_object.cc" />
+    <ClCompile Include="logon.cc" />
     <ClCompile Include="policy.cc" />
     <ClCompile Include="sid.cc" />
     <ClCompile Include="util.cpp" />

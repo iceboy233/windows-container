@@ -78,7 +78,22 @@ int main() {
   while (*--slash != L'\\');
   *++slash = L'\0';
   wcscat_s(exe_path, L"payload_aplusb.exe");
+  srand(::GetTickCount());
 
   Container c;
-  printf("%d\n", call_aplusb(c, exe_path, 1, 2));
+  while (true) {
+    unsigned int spawned = 0;
+    DWORD start = ::GetTickCount();
+    do {
+      int a = rand(), b = rand();
+      int ret = call_aplusb(c, exe_path, a, b);
+      if (ret != a + b) {
+        fprintf(stderr, "Math error!\n");
+        exit(1);
+      }
+      ++spawned;
+    } while (::GetTickCount() - start < 1000);
+    printf("Spawn %u process in 1 second\n", spawned);
+    ::Sleep(1000);
+  }
 }

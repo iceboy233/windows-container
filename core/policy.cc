@@ -10,11 +10,17 @@
 
 #include "core/desktop.h"
 #include "core/job_object.h"
+#include "core/logon.h"
 
 using std::make_unique;
 using std::vector;
 
 namespace winc {
+
+Policy::~Policy() {
+  if (restricted_token_ != NULL)
+    ::CloseHandle(restricted_token_);
+}
 
 ResultCode Policy::RestrictSid(WELL_KNOWN_SID_TYPE type) {
   restricted_sids_.push_back(Sid());
@@ -28,44 +34,7 @@ void Policy::RestrictSid(const Sid &sid) {
   restricted_sids_.push_back(sid);
 }
 
-ResultCode Policy::GetSidLogonSession(Sid *out_sid) {
-  // TODO(iceboy): Cache the SID if possible
-
-  HANDLE token;
-  if (!CreateEffectiveToken(&token))
-    return WINC_ERROR_TOKEN;
-
-  DWORD size;
-  if (!::GetTokenInformation(token, TokenGroups, NULL, 0, &size) &&
-      ::GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
-    ::CloseHandle(token);
-    return WINC_ERROR_TOKEN;
-  }
-
-  TOKEN_GROUPS *info = reinterpret_cast<TOKEN_GROUPS *>(_malloca(size));
-  if (::GetTokenInformation(token, TokenGroups, info, size, &size)) {
-    for (unsigned int i = 0; i < info->GroupCount; ++i) {
-      if (info->Groups[i].Attributes & SE_GROUP_LOGON_ID) {
-        out_sid->Init(reinterpret_cast<SID *>(info->Groups[i].Sid));
-        _freea(info);
-        ::CloseHandle(token);
-        return WINC_OK;
-      }
-    }
-  }
-
-  _freea(info);
-  ::CloseHandle(token);
-  return WINC_ERROR_TOKEN;
-}
-
-ResultCode Policy::CreateRestrictedToken(HANDLE *out_token) {
-  // TODO(iceboy): Cache the token if possible
-
-  HANDLE effective_token;
-  if (!CreateEffectiveToken(&effective_token))
-    return WINC_ERROR_TOKEN;
-
+ResultCode Policy::InitRestrictedToken() {
   vector<SID_AND_ATTRIBUTES> sids_to_restrict(restricted_sids_.size());
   for (unsigned int i = 0; i < restricted_sids_.size(); ++i) {
     sids_to_restrict[i].Sid = restricted_sids_[i].data();
@@ -73,30 +42,39 @@ ResultCode Policy::CreateRestrictedToken(HANDLE *out_token) {
   }
 
   HANDLE restricted_token;
-  BOOL success = ::CreateRestrictedToken(effective_token,
+  BOOL success = ::CreateRestrictedToken(logon_->GetToken(),
     disable_max_privilege_ ? DISABLE_MAX_PRIVILEGE : 0,
     0, NULL,
     0, NULL,
     sids_to_restrict.size(), sids_to_restrict.data(),
     &restricted_token);
 
-  ::CloseHandle(effective_token);
-
   if (!success)
     return WINC_ERROR_TOKEN;
 
-  *out_token = restricted_token;
+  restricted_token_ = restricted_token;
   return WINC_OK;
 }
 
-ResultCode Policy::CreateTargetDesktop(Desktop **out_desktop) {
+ResultCode Policy::GetRestrictedToken(HANDLE *out_token) {
+  if (restricted_token_ == NULL) {
+    ResultCode rc = InitRestrictedToken();
+    if (rc != WINC_OK)
+      return rc;
+  }
+
+  *out_token = restricted_token_;
+  return WINC_OK;
+}
+
+ResultCode Policy::MakeDesktop(Desktop **out_desktop) {
   if (!use_alternate_desktop_) {
     *out_desktop = new DefaultDesktop;
   } else {
     auto desktop = make_unique<AlternateDesktop>();
-    Sid logon_sid;
-    ResultCode rc = GetSidLogonSession(&logon_sid);
-    rc = desktop->Init();
+    ResultCode rc = desktop->Init(
+        DESKTOP_READOBJECTS | DESKTOP_CREATEWINDOW | DESKTOP_WRITEOBJECTS |
+        DESKTOP_SWITCHDESKTOP | READ_CONTROL | WRITE_DAC);
     if (rc != WINC_OK)
       return rc;
     *out_desktop = desktop.release();
@@ -104,7 +82,7 @@ ResultCode Policy::CreateTargetDesktop(Desktop **out_desktop) {
   return WINC_OK;
 }
 
-ResultCode Policy::CreateTargetJobObject(JobObject **out_job) {
+ResultCode Policy::MakeJobObject(JobObject **out_job) {
   JobObject *job = new JobObject;
   ResultCode rc = job->Init();
   if (rc != WINC_OK)
@@ -127,16 +105,6 @@ ResultCode Policy::CreateTargetJobObject(JobObject **out_job) {
 
   *out_job = job;
   return WINC_OK;
-}
-
-bool Policy::CreateEffectiveToken(HANDLE *out_token) {
-  // TODO(iceboy): Use the logon token if present
-
-  if (!::OpenProcessToken(::GetCurrentProcess(),
-    TOKEN_QUERY | TOKEN_DUPLICATE | TOKEN_ASSIGN_PRIMARY,
-    out_token))
-    return false;
-  return true;
 }
 
 }

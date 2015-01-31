@@ -41,7 +41,7 @@ public:
                    IoHandles *io_handles OPTIONAL,
                    TargetProcess **out_process);
   
-  static Policy *CreateDefaultPolicy();
+  static ResultCode CreateDefaultPolicy(Policy **out_policy);
   const Policy *policy();
   void set_policy(std::unique_ptr<Policy> &policy);
 

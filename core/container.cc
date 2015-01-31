@@ -7,6 +7,7 @@
 #include <Windows.h>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <winc_types.h>
@@ -15,7 +16,10 @@
 #include "core/sid.h"
 #include "core/job_object.h"
 #include "core/util.h"
+#include "core/logon.h"
 
+using std::make_unique;
+using std::move;
 using std::unique_ptr;
 using std::vector;
 using std::wstring;
@@ -30,22 +34,26 @@ ResultCode Container::Spawn(const wchar_t *exe_path,
                             SpawnOptions *options OPTIONAL,
                             IoHandles *io_handles OPTIONAL,
                             TargetProcess **out_process) {
-  if (!policy_)
-    policy_.reset(CreateDefaultPolicy());
+  if (!policy_) {
+    Policy *policy;
+    ResultCode rc = CreateDefaultPolicy(&policy);
+    if (rc != WINC_OK)
+      return rc;
+    policy_.reset(policy);
+  }
   HANDLE restricted_token;
-  ResultCode rc = policy_->CreateRestrictedToken(&restricted_token);
+  ResultCode rc = policy_->GetRestrictedToken(&restricted_token);
   if (rc != WINC_OK)
     return rc;
-  unique_handle restricted_token_holder(restricted_token);
 
   Desktop *desktop;
-  rc = policy_->CreateTargetDesktop(&desktop);
+  rc = policy_->MakeDesktop(&desktop);
   if (rc != WINC_OK)
     return rc;
   unique_ptr<Desktop> desktop_holder(desktop);
 
   JobObject *job_object;
-  rc = policy_->CreateTargetJobObject(&job_object);
+  rc = policy_->MakeJobObject(&job_object);
   if (rc != WINC_OK)
     return rc;
   unique_ptr<JobObject> job_object_holder(job_object);
@@ -113,12 +121,20 @@ ResultCode Container::Spawn(const wchar_t *exe_path,
   return WINC_OK;
 }
 
-Policy *Container::CreateDefaultPolicy() {
-  Policy *policy = new Policy;
+ResultCode Container::CreateDefaultPolicy(Policy **out_policy) {
+  CurrentLogon *logon = new CurrentLogon;
+  ResultCode rc = logon->Init(TOKEN_QUERY | TOKEN_DUPLICATE |
+                              TOKEN_ASSIGN_PRIMARY);
+  Sid logon_sid;
+  rc = logon->GetGroupSid(&logon_sid);
+  if (rc != WINC_OK) {
+    delete logon;
+    return rc;
+  }
+
+  Policy *policy = new Policy(unique_ptr<Logon>(logon));
   policy->UseAlternateDesktop();
   policy->DisableMaxPrivilege();
-  Sid logon_sid;
-  policy->GetSidLogonSession(&logon_sid);
   policy->RestrictSid(logon_sid);
   policy->RestrictSid(WinBuiltinUsersSid);
   policy->RestrictSid(WinWorldSid);
@@ -132,7 +148,8 @@ Policy *Container::CreateDefaultPolicy() {
                             | JOB_OBJECT_UILIMIT_GLOBALATOMS
                             | JOB_OBJECT_UILIMIT_DESKTOP
                             | JOB_OBJECT_UILIMIT_EXITWINDOWS);
-  return policy;
+  *out_policy = policy;
+  return WINC_OK;
 }
 
 TargetProcess::TargetProcess(unique_ptr<Desktop> &desktop,
