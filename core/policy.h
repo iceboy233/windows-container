@@ -21,8 +21,7 @@ public:
   Policy()
     : use_alternate_desktop_(false)
     , disable_max_privilege_(false)
-    , job_object_basic_limit_(JOB_OBJECT_LIMIT_DIE_ON_UNHANDLED_EXCEPTION |
-                               JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE)
+    , job_object_basic_limit_(0)
     , job_object_ui_limit_(0)
     {}
 

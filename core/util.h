@@ -9,6 +9,8 @@
 #include <memory>
 #include <type_traits>
 
+#include <winc_types.h>
+
 namespace winc {
 
 struct CloseHandleDeleter {
@@ -19,6 +21,30 @@ struct CloseHandleDeleter {
 
 typedef std::unique_ptr<std::remove_pointer<HANDLE>::type,
                         CloseHandleDeleter> unique_handle;
+
+class ProcThreadAttributeList {
+public:
+  ProcThreadAttributeList()
+    : data_(nullptr)
+    {}
+
+  ~ProcThreadAttributeList();
+
+  ResultCode Init(DWORD attribute_count, DWORD flags);
+  ResultCode Update(DWORD flags, DWORD_PTR attribute,
+                    PVOID value, SIZE_T size);
+
+  LPPROC_THREAD_ATTRIBUTE_LIST data() const {
+    return data_;
+  }
+
+private:
+  LPPROC_THREAD_ATTRIBUTE_LIST data_;
+  
+private:
+  ProcThreadAttributeList(const ProcThreadAttributeList &) =delete;
+  void operator=(const ProcThreadAttributeList &) =delete;
+};
 
 }
 

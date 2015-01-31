@@ -7,6 +7,7 @@
 #include <Windows.h>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include <winc_types.h>
 #include "core/policy.h"
@@ -16,6 +17,7 @@
 #include "core/util.h"
 
 using std::unique_ptr;
+using std::vector;
 using std::wstring;
 using winc::Sid;
 
@@ -48,30 +50,52 @@ ResultCode Container::Spawn(const wchar_t *exe_path,
     return rc;
   unique_ptr<JobObject> job_object_holder(job_object);
 
-  STARTUPINFOW si = {};
-  si.cb = sizeof(si);
-  si.dwFlags = STARTF_FORCEOFFFEEDBACK;
-  if (io_handles) {
-    si.dwFlags   |= STARTF_USESTDHANDLES;
-    si.hStdInput  = io_handles->stdin_handle;
-    si.hStdOutput = io_handles->stdout_handle;
-    si.hStdError  = io_handles->stderr_handle;
-  }
+  STARTUPINFOEXW si = {};
+  si.StartupInfo.cb = sizeof(si);
+  si.StartupInfo.dwFlags = STARTF_FORCEOFFFEEDBACK;
   wstring desktop_name;
   if (!desktop->IsDefaultDesktop()) {
     rc = desktop->GetFullName(&desktop_name);
     if (rc != WINC_OK)
       return rc;
-    si.lpDesktop = const_cast<wchar_t *>(desktop_name.c_str());
+    si.StartupInfo.lpDesktop = const_cast<wchar_t *>(desktop_name.c_str());
+  }
+
+  ProcThreadAttributeList attribute_list;
+  HANDLE inherit_list[3];
+  SIZE_T inherit_count = 0;
+  if (io_handles) {
+    si.StartupInfo.dwFlags   |= STARTF_USESTDHANDLES;
+    si.StartupInfo.hStdInput  = io_handles->stdin_handle;
+    si.StartupInfo.hStdOutput = io_handles->stdout_handle;
+    si.StartupInfo.hStdError  = io_handles->stderr_handle;
+
+    if (io_handles->stdin_handle)
+      inherit_list[inherit_count++] = io_handles->stdin_handle;
+    if (io_handles->stdout_handle)
+      inherit_list[inherit_count++] = io_handles->stdout_handle;
+    if (io_handles->stderr_handle)
+      inherit_list[inherit_count++] = io_handles->stderr_handle;
+  }
+
+  if (inherit_count) {
+    rc = attribute_list.Init(1, 0);
+    if (rc != WINC_OK)
+      return rc;
+    rc = attribute_list.Update(0, PROC_THREAD_ATTRIBUTE_HANDLE_LIST,
+                          inherit_list, inherit_count * sizeof(HANDLE));
+    if (rc != WINC_OK)
+      return rc;
+    si.lpAttributeList = attribute_list.data();
   }
 
   PROCESS_INFORMATION pi;
   BOOL success = ::CreateProcessAsUserW(restricted_token,
     exe_path,
     options ? options->command_line : NULL,
-    NULL, NULL, FALSE,
+    NULL, NULL, inherit_count ? TRUE : FALSE,
     CREATE_BREAKAWAY_FROM_JOB | CREATE_SUSPENDED,
-    NULL, NULL, &si, &pi);
+    NULL, NULL, &si.StartupInfo, &pi);
   if (!success)
     return WINC_ERROR_SPAWN;
   unique_handle process_holder(pi.hProcess);
@@ -98,6 +122,8 @@ Policy *Container::CreateDefaultPolicy() {
   policy->RestrictSid(logon_sid);
   policy->RestrictSid(WinBuiltinUsersSid);
   policy->RestrictSid(WinWorldSid);
+  policy->SetJobObjectBasicLimit(JOB_OBJECT_LIMIT_DIE_ON_UNHANDLED_EXCEPTION
+                               | JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE);
   policy->SetJobObjectUILimit(JOB_OBJECT_UILIMIT_HANDLES
                             | JOB_OBJECT_UILIMIT_READCLIPBOARD
                             | JOB_OBJECT_UILIMIT_WRITECLIPBOARD

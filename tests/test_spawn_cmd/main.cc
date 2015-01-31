@@ -5,24 +5,32 @@
 #include <Windows.h>
 #include <cstring>
 #include <cstdio>
+#include <cstdlib>
 
 #include <winc.h>
 
 using namespace winc;
 
 int main() {
-  Container c;
   wchar_t cmd_path[MAX_PATH];
   ::GetSystemDirectoryW(cmd_path, MAX_PATH);
-  ::wcscat_s(cmd_path, L"\\cmd.exe");
+  wcscat_s(cmd_path, L"\\cmd.exe");
+
+  Container c;
   TargetProcess *process;
   ResultCode rc = c.Spawn(cmd_path, nullptr, nullptr, &process);
   if (rc != WINC_OK) {
     fprintf(stderr, "Spawn error %d\n", rc);
-    return 1;
+    exit(1);
   }
+
   fprintf(stderr, "Process %d created\n", process->process_id());
-  process->Run();
+  rc = process->Run();
+  if (rc != WINC_OK) {
+    fprintf(stderr, "Run error %d\n", rc);
+    exit(1);
+  }
+
   fprintf(stderr, "Process %d exited\n", process->process_id());
   delete process;
 }
