@@ -46,12 +46,6 @@ ResultCode Container::Spawn(const wchar_t *exe_path,
   if (rc != WINC_OK)
     return rc;
 
-  Desktop *desktop;
-  rc = policy_->MakeDesktop(&desktop);
-  if (rc != WINC_OK)
-    return rc;
-  unique_ptr<Desktop> desktop_holder(desktop);
-
   JobObject *job_object;
   rc = policy_->MakeJobObject(&job_object);
   if (rc != WINC_OK)
@@ -61,12 +55,13 @@ ResultCode Container::Spawn(const wchar_t *exe_path,
   STARTUPINFOEXW si = {};
   si.StartupInfo.cb = sizeof(si);
   si.StartupInfo.dwFlags = STARTF_FORCEOFFFEEDBACK;
-  wstring desktop_name;
-  if (!desktop->IsDefaultDesktop()) {
-    rc = desktop->GetFullName(&desktop_name);
+  const Desktop &desktop = policy_->desktop();
+  if (!desktop.IsDefaultDesktop()) {
+    const wchar_t *desktop_name;
+    rc = desktop.GetFullName(&desktop_name);
     if (rc != WINC_OK)
       return rc;
-    si.StartupInfo.lpDesktop = const_cast<wchar_t *>(desktop_name.c_str());
+    si.StartupInfo.lpDesktop = const_cast<wchar_t *>(desktop_name);
   }
 
   ProcThreadAttributeList attribute_list;
@@ -115,7 +110,7 @@ ResultCode Container::Spawn(const wchar_t *exe_path,
     return rc;
   }
 
-  *out_process = new TargetProcess(desktop_holder, job_object_holder,
+  *out_process = new TargetProcess(job_object_holder,
                                    pi.dwProcessId, pi.dwThreadId,
                                    process_holder, thread_holder);
   return WINC_OK;
@@ -133,8 +128,9 @@ ResultCode Container::CreateDefaultPolicy(Policy **out_policy) {
   }
 
   Policy *policy = new Policy(unique_ptr<Logon>(logon));
-  policy->UseAlternateDesktop();
-  policy->DisableMaxPrivilege();
+  rc = policy->UseAlternateDesktop();
+  if (rc != WINC_OK)
+    return rc;
   policy->RestrictSid(logon_sid);
   policy->RestrictSid(WinBuiltinUsersSid);
   policy->RestrictSid(WinWorldSid);
@@ -152,13 +148,11 @@ ResultCode Container::CreateDefaultPolicy(Policy **out_policy) {
   return WINC_OK;
 }
 
-TargetProcess::TargetProcess(unique_ptr<Desktop> &desktop,
-                             unique_ptr<JobObject> &job_object,
+TargetProcess::TargetProcess(unique_ptr<JobObject> &job_object,
                              DWORD process_id, DWORD thread_id,
                              unique_handle &process_handle,
                              unique_handle &thread_handle)
-  : desktop_(move(desktop))
-  , job_object_(move(job_object))
+  : job_object_(move(job_object))
   , process_id_(process_id)
   , thread_id_(thread_id)
   , process_handle_(move(process_handle))

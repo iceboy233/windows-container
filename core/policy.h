@@ -9,11 +9,11 @@
 #include <memory>
 #include <vector>
 
+#include "core/desktop.h"
 #include "core/sid.h"
 
 namespace winc {
 
-class Desktop;
 class JobObject;
 class Logon;
 
@@ -21,8 +21,7 @@ class Policy {
 public:
   explicit Policy(std::unique_ptr<Logon> &logon)
     : restricted_token_(NULL)
-    , use_alternate_desktop_(false)
-    , disable_max_privilege_(false)
+    , desktop_(new DefaultDesktop)
     , job_object_basic_limit_(0)
     , job_object_ui_limit_(0)
     , logon_(move(logon))
@@ -30,12 +29,9 @@ public:
 
   ~Policy();
 
-  void UseAlternateDesktop() {
-    use_alternate_desktop_ = true;
-  }
-
-  void DisableMaxPrivilege() {
-    disable_max_privilege_ = true;
+  ResultCode UseAlternateDesktop();
+  const Desktop &desktop() const {
+    return *desktop_.get();
   }
 
   ResultCode RestrictSid(WELL_KNOWN_SID_TYPE type);
@@ -50,16 +46,15 @@ public:
   }
 
   ResultCode GetRestrictedToken(HANDLE *out_token);
-  ResultCode MakeDesktop(Desktop **out_desktop);
   ResultCode MakeJobObject(JobObject **out_job);
 
 private:
   ResultCode InitRestrictedToken();
+  ResultCode InitDesktop();
 
 private:
   HANDLE restricted_token_;
-  bool use_alternate_desktop_;
-  bool disable_max_privilege_;
+  std::unique_ptr<Desktop> desktop_;
   DWORD job_object_basic_limit_;
   DWORD job_object_ui_limit_;
   std::unique_ptr<Logon> logon_;

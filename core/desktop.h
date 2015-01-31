@@ -6,7 +6,7 @@
 #define WINC_CORE_DESKTOP_H_
 
 #include <Windows.h>
-#include <string>
+#include <vector>
 
 #include <winc_types.h>
 
@@ -15,26 +15,29 @@ namespace winc {
 class Desktop {
 public:
   virtual ~Desktop() =default;
-  virtual bool IsDefaultDesktop() =0;
-  virtual HDESK GetDesktopHandle() =0;
-  virtual HWINSTA GetWinstaHandle() =0;
-  ResultCode GetFullName(std::wstring *out_name);
+  virtual bool IsDefaultDesktop() const =0;
+  virtual HDESK GetDesktopHandle() const =0;
+  virtual HWINSTA GetWinstaHandle() const =0;
+  ResultCode GetFullName(const wchar_t **out_name) const;
+
+private:
+  mutable std::vector<wchar_t> full_name_cache_;
 };
 
 class DesktopWithDefaultWinsta : public Desktop {
 public:
-  virtual HWINSTA GetWinstaHandle() {
+  virtual HWINSTA GetWinstaHandle() const {
     return ::GetProcessWindowStation();
   }
 };
 
 class DefaultDesktop : public DesktopWithDefaultWinsta {
 public:
-  virtual bool IsDefaultDesktop() {
+  virtual bool IsDefaultDesktop() const {
     return true;
   }
 
-  virtual HDESK GetDesktopHandle() {
+  virtual HDESK GetDesktopHandle() const {
     return ::GetThreadDesktop(::GetCurrentThreadId());
   }
 };
@@ -46,11 +49,11 @@ public:
 
   ResultCode Init(DWORD access);
 
-  virtual bool IsDefaultDesktop() {
+  virtual bool IsDefaultDesktop() const {
     return false;
   }
 
-  virtual HDESK GetDesktopHandle() {
+  virtual HDESK GetDesktopHandle() const {
     return hdesk_;
   }
 

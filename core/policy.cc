@@ -4,7 +4,6 @@
 
 #include "core/policy.h"
 
-#include <malloc.h>
 #include <memory>
 #include <vector>
 
@@ -20,6 +19,17 @@ namespace winc {
 Policy::~Policy() {
   if (restricted_token_ != NULL)
     ::CloseHandle(restricted_token_);
+}
+
+ResultCode Policy::UseAlternateDesktop() {
+  auto desktop = make_unique<AlternateDesktop>();
+  ResultCode rc = desktop->Init(
+      DESKTOP_READOBJECTS | DESKTOP_CREATEWINDOW | DESKTOP_WRITEOBJECTS |
+      DESKTOP_SWITCHDESKTOP | READ_CONTROL | WRITE_DAC);
+  if (rc != WINC_OK)
+    return rc;
+  desktop_ = move(desktop);
+  return WINC_OK;
 }
 
 ResultCode Policy::RestrictSid(WELL_KNOWN_SID_TYPE type) {
@@ -43,9 +53,7 @@ ResultCode Policy::InitRestrictedToken() {
 
   HANDLE restricted_token;
   BOOL success = ::CreateRestrictedToken(logon_->GetToken(),
-    disable_max_privilege_ ? DISABLE_MAX_PRIVILEGE : 0,
-    0, NULL,
-    0, NULL,
+    DISABLE_MAX_PRIVILEGE, 0, NULL, 0, NULL,
     sids_to_restrict.size(), sids_to_restrict.data(),
     &restricted_token);
 
@@ -64,21 +72,6 @@ ResultCode Policy::GetRestrictedToken(HANDLE *out_token) {
   }
 
   *out_token = restricted_token_;
-  return WINC_OK;
-}
-
-ResultCode Policy::MakeDesktop(Desktop **out_desktop) {
-  if (!use_alternate_desktop_) {
-    *out_desktop = new DefaultDesktop;
-  } else {
-    auto desktop = make_unique<AlternateDesktop>();
-    ResultCode rc = desktop->Init(
-        DESKTOP_READOBJECTS | DESKTOP_CREATEWINDOW | DESKTOP_WRITEOBJECTS |
-        DESKTOP_SWITCHDESKTOP | READ_CONTROL | WRITE_DAC);
-    if (rc != WINC_OK)
-      return rc;
-    *out_desktop = desktop.release();
-  }
   return WINC_OK;
 }
 

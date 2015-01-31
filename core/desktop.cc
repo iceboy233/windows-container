@@ -4,26 +4,25 @@
 
 #include "core/desktop.h"
 
-#include <malloc.h>
-#include <string>
+#include <vector>
 #include <cstring>
 
-using std::wstring;
+using std::vector;
 
 namespace {
 
-bool AppendNameUserObject(HANDLE user_object, wstring *append) {
+bool AppendNameUserObject(HANDLE user_object, vector<wchar_t> &append) {
   DWORD size;
   if (!::GetUserObjectInformationW(user_object, UOI_NAME, NULL, 0, &size) &&
       ::GetLastError() != ERROR_INSUFFICIENT_BUFFER)
     return false;
-  wchar_t *buffer = reinterpret_cast<wchar_t *>(_malloca(size));
-  if (!::GetUserObjectInformationW(user_object, UOI_NAME, buffer, size, &size)) {
-    _freea(buffer);
+  size_t orig_size = append.size();
+  append.resize(orig_size + (size + 1) / 2);
+  if (!::GetUserObjectInformationW(user_object, UOI_NAME, &append[orig_size], size, &size)) {
+    append.resize(orig_size);
     return false;
   }
-  append->insert(append->end(), buffer, buffer + wcslen(buffer));
-  _freea(buffer);
+  append.resize(wcslen(append.data()));
   return true;
 }
 
@@ -31,13 +30,18 @@ bool AppendNameUserObject(HANDLE user_object, wstring *append) {
 
 namespace winc {
 
-ResultCode Desktop::GetFullName(wstring *out_name) {
-  out_name->clear();
-  if (!AppendNameUserObject(GetWinstaHandle(), out_name))
-    return WINC_ERROR_DESKTOP;
-  out_name->push_back('\\');
-  if (!AppendNameUserObject(GetDesktopHandle(), out_name))
-    return WINC_ERROR_DESKTOP;
+ResultCode Desktop::GetFullName(const wchar_t **out_name) const {
+  if (full_name_cache_.empty()) {
+    if (!AppendNameUserObject(GetWinstaHandle(), full_name_cache_))
+      return WINC_ERROR_DESKTOP;
+    full_name_cache_.push_back(L'\\');
+    if (!AppendNameUserObject(GetDesktopHandle(), full_name_cache_)) {
+      full_name_cache_.clear();
+      return WINC_ERROR_DESKTOP;
+    }
+    full_name_cache_.push_back(L'\0');
+  }
+  *out_name = full_name_cache_.data();
   return WINC_OK;
 }
 

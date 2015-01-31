@@ -56,8 +56,7 @@ private:
 class TargetProcess {
 private:
   friend class Container;
-  TargetProcess(std::unique_ptr<Desktop> &desktop,
-                std::unique_ptr<JobObject> &job_object,
+  TargetProcess(std::unique_ptr<JobObject> &job_object,
                 DWORD process_id, DWORD thread_id,
                 unique_handle &process_handle,
                 unique_handle &thread_handle);
@@ -76,7 +75,6 @@ public:
   ResultCode Run();
 
 private:
-  std::unique_ptr<Desktop> desktop_;
   std::unique_ptr<JobObject> job_object_;
   DWORD process_id_;
   DWORD thread_id_;
