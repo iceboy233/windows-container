@@ -18,6 +18,7 @@ class Policy;
 class TargetProcess;
 class Desktop;
 class JobObject;
+class Debugger;
 
 struct IoHandles {
   HANDLE stdin_handle;
@@ -57,6 +58,7 @@ class TargetProcess {
 private:
   friend class Container;
   TargetProcess(std::unique_ptr<JobObject> &job_object,
+                std::unique_ptr<Debugger> &debugger,
                 DWORD process_id, DWORD thread_id,
                 unique_handle &process_handle,
                 unique_handle &thread_handle);
@@ -82,6 +84,7 @@ public:
 
 private:
   std::unique_ptr<JobObject> job_object_;
+  std::unique_ptr<Debugger> debugger_;
   DWORD process_id_;
   DWORD thread_id_;
   unique_handle process_handle_;

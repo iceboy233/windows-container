@@ -18,13 +18,13 @@
 #include "core/job_object.h"
 #include "core/util.h"
 #include "core/logon.h"
+#include "core/debugger.h"
 
 using std::make_unique;
 using std::move;
 using std::unique_ptr;
 using std::vector;
 using std::wstring;
-using winc::Sid;
 
 namespace winc {
 
@@ -127,16 +127,25 @@ ResultCode Container::Spawn(const wchar_t *exe_path,
     NULL, NULL, &si.StartupInfo, &pi);
   if (!success)
     return WINC_ERROR_SPAWN;
+
+  // Assign the process to the job object as soon as possible
+  rc = job_object->AssignProcess(pi.hProcess);
   unique_handle process_holder(pi.hProcess);
   unique_handle thread_holder(pi.hThread);
-
-  rc = job_object->AssignProcess(pi.hProcess);
   if (rc != WINC_OK) {
     ::TerminateProcess(pi.hProcess, 1);
     return rc;
   }
 
-  *out_process = new TargetProcess(job_object_holder,
+  Debugger *debugger = new Debugger;
+  rc = debugger->Init(pi.hProcess);
+  if (rc != WINC_OK) {
+    ::TerminateProcess(pi.hProcess, 1);
+    return rc;
+  }
+  unique_ptr<Debugger> debugger_holder(debugger);
+
+  *out_process = new TargetProcess(job_object_holder, debugger_holder,
                                    pi.dwProcessId, pi.dwThreadId,
                                    process_holder, thread_holder);
   return WINC_OK;
@@ -175,10 +184,12 @@ ResultCode Container::CreateDefaultPolicy(Policy **out_policy) {
 }
 
 TargetProcess::TargetProcess(unique_ptr<JobObject> &job_object,
+                             unique_ptr<Debugger> &debugger,
                              DWORD process_id, DWORD thread_id,
                              unique_handle &process_handle,
                              unique_handle &thread_handle)
   : job_object_(move(job_object))
+  , debugger_(move(debugger))
   , process_id_(process_id)
   , thread_id_(thread_id)
   , process_handle_(move(process_handle))
@@ -199,31 +210,33 @@ ResultCode TargetProcess::GetJobTime(ULONG64 *out_time) {
   JOBOBJECT_BASIC_ACCOUNTING_INFORMATION info;
   ResultCode rc = job_object_->GetAccountInfo(&info);
   if (rc != WINC_OK)
-    return rc;
+    return WINC_ERROR_QUERY;
   *out_time = info.TotalKernelTime.QuadPart + info.TotalUserTime.QuadPart;
   return WINC_OK;
 }
 
 ResultCode TargetProcess::GetProcessTime(ULONG64 *out_time) {
-  ULONG64 kernel_time, user_time;
-  if (!::GetProcessTimes(process_handle_.get(), NULL, NULL,
+  ULONG64 creation_time, exit_time, kernel_time, user_time;
+  if (!::GetProcessTimes(process_handle_.get(),
+                         reinterpret_cast<LPFILETIME>(&creation_time),
+                         reinterpret_cast<LPFILETIME>(&exit_time),
                          reinterpret_cast<LPFILETIME>(&kernel_time),
                          reinterpret_cast<LPFILETIME>(&user_time)))
-    return WINC_ERROR_RUN;
+    return WINC_ERROR_QUERY;
   *out_time = kernel_time + user_time;
   return WINC_OK;
 }
 
 ResultCode TargetProcess::GetProcessCycle(ULONG64 *out_cycle) {
   if (!::QueryProcessCycleTime(process_handle_.get(), out_cycle))
-    return WINC_ERROR_RUN;
+    return WINC_ERROR_QUERY;
   return WINC_OK;
 }
 
 ResultCode TargetProcess::GetProcessPeakMemory(SIZE_T *out_size) {
   PROCESS_MEMORY_COUNTERS pmc;
   if (!::GetProcessMemoryInfo(process_handle_.get(), &pmc, sizeof(pmc)))
-    return WINC_ERROR_RUN;
+    return WINC_ERROR_QUERY;
   *out_size = pmc.PeakPagefileUsage;
   return WINC_OK;
 }
@@ -232,7 +245,7 @@ ResultCode TargetProcess::GetJobPeakMemory(SIZE_T *out_size) {
   JOBOBJECT_EXTENDED_LIMIT_INFORMATION limit;
   ResultCode rc = job_object_->GetBasicLimit(&limit);
   if (rc != WINC_OK)
-    return rc;
+    return WINC_ERROR_QUERY;
   *out_size = limit.PeakJobMemoryUsed;
   return WINC_OK;
 }
