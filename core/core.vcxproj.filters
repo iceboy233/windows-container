@@ -15,7 +15,7 @@
     <ClCompile Include="policy.cc" />
     <ClCompile Include="desktop.cc" />
     <ClCompile Include="job_object.cc" />
-    <ClCompile Include="util.cpp" />
     <ClCompile Include="logon.cc" />
+    <ClCompile Include="util.cc" />
   </ItemGroup>
 </Project>

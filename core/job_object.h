@@ -20,6 +20,7 @@ public:
   ResultCode SetBasicLimit(const JOBOBJECT_EXTENDED_LIMIT_INFORMATION &limit);
   ResultCode GetUILimit(JOBOBJECT_BASIC_UI_RESTRICTIONS *ui_limit);
   ResultCode SetUILimit(const JOBOBJECT_BASIC_UI_RESTRICTIONS &ui_limit);
+  ResultCode GetAccountInfo(JOBOBJECT_BASIC_ACCOUNTING_INFORMATION *info);
 
 private:
   HANDLE job_;

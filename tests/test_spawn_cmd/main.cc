@@ -6,6 +6,7 @@
 #include <cstring>
 #include <cstdio>
 #include <cstdlib>
+#include <cinttypes>
 
 #include <winc.h>
 
@@ -24,13 +25,19 @@ int main() {
     exit(1);
   }
 
-  fprintf(stderr, "Process %d created\n", process->process_id());
+  ::SetConsoleCtrlHandler(NULL, TRUE);
+  fprintf(stderr, "PID %" PRIu32 " CREATED\n", process->process_id());
   rc = process->Run();
   if (rc != WINC_OK) {
     fprintf(stderr, "Run error %d\n", rc);
     exit(1);
   }
 
-  fprintf(stderr, "Process %d exited\n", process->process_id());
+  ULONG64 time;
+  SIZE_T peak_mem;
+  process->GetJobTime(&time);
+  process->GetJobPeakMemory(&peak_mem);
+  fprintf(stderr, "PID %" PRIu32 "  TIME %" PRIu64 "  MEM %" PRIu64 "\n",
+    process->process_id(), time / 10000, static_cast<uint64_t>(peak_mem));
   delete process;
 }

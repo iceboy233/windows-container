@@ -26,10 +26,10 @@ struct IoHandles {
 };
 
 struct SpawnOptions {
-  uint32_t reserved;
   wchar_t *command_line;
-  uint32_t time_limit_ms;
-  uint32_t memory_limit_kb;
+  uintptr_t processor_affinity;
+  uintptr_t memory_limit;
+  uint32_t active_process_limit;
 };
 
 class Container {
@@ -73,6 +73,12 @@ public:
 
   // TODO(iceboy): monitor, status, async iface?
   ResultCode Run();
+
+  ResultCode GetJobTime(ULONG64 *out_time);
+  ResultCode GetProcessTime(ULONG64 *out_time);
+  ResultCode GetProcessCycle(ULONG64 *out_cycle);
+  ResultCode GetJobPeakMemory(SIZE_T *out_size);
+  ResultCode GetProcessPeakMemory(SIZE_T *out_size);
 
 private:
   std::unique_ptr<JobObject> job_object_;

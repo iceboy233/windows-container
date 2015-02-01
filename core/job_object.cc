@@ -57,4 +57,12 @@ ResultCode JobObject::SetUILimit(
   return WINC_OK;
 }
 
+ResultCode JobObject::GetAccountInfo(
+    JOBOBJECT_BASIC_ACCOUNTING_INFORMATION *info) {
+  if (!::QueryInformationJobObject(job_, JobObjectBasicAccountingInformation,
+      info, sizeof(JOBOBJECT_BASIC_ACCOUNTING_INFORMATION), NULL))
+    return WINC_ERROR_JOB_OBJECT;
+  return WINC_OK;
+}
+
 }

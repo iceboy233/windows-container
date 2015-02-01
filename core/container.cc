@@ -5,6 +5,7 @@
 #include "core/container.h"
 
 #include <Windows.h>
+#include <Psapi.h>
 #include <memory>
 #include <string>
 #include <utility>
@@ -51,6 +52,31 @@ ResultCode Container::Spawn(const wchar_t *exe_path,
   if (rc != WINC_OK)
     return rc;
   unique_ptr<JobObject> job_object_holder(job_object);
+  if (options) {
+    if (options->processor_affinity ||
+        options->memory_limit ||
+        options->active_process_limit) {
+      JOBOBJECT_EXTENDED_LIMIT_INFORMATION limit;
+      rc = job_object->GetBasicLimit(&limit);
+      if (rc != WINC_OK)
+        return rc;
+      if (options->processor_affinity) {
+        limit.BasicLimitInformation.LimitFlags |= JOB_OBJECT_LIMIT_AFFINITY;
+        limit.BasicLimitInformation.Affinity = options->processor_affinity;
+      }
+      if (options->memory_limit) {
+        limit.BasicLimitInformation.LimitFlags |= JOB_OBJECT_LIMIT_JOB_MEMORY;
+        limit.JobMemoryLimit = options->memory_limit;
+      }
+      if (options->active_process_limit) {
+        limit.BasicLimitInformation.LimitFlags |= JOB_OBJECT_LIMIT_ACTIVE_PROCESS;
+        limit.BasicLimitInformation.ActiveProcessLimit = options->active_process_limit;
+      }
+      rc = job_object->SetBasicLimit(limit);
+      if (rc != WINC_OK)
+        return rc;
+    }
+  }
 
   STARTUPINFOEXW si = {};
   si.StartupInfo.cb = sizeof(si);
@@ -166,6 +192,48 @@ ResultCode TargetProcess::Run() {
     return WINC_ERROR_RUN;
   if (::WaitForSingleObject(process_handle_.get(), INFINITE) == WAIT_FAILED)
     return WINC_ERROR_RUN;
+  return WINC_OK;
+}
+
+ResultCode TargetProcess::GetJobTime(ULONG64 *out_time) {
+  JOBOBJECT_BASIC_ACCOUNTING_INFORMATION info;
+  ResultCode rc = job_object_->GetAccountInfo(&info);
+  if (rc != WINC_OK)
+    return rc;
+  *out_time = info.TotalKernelTime.QuadPart + info.TotalUserTime.QuadPart;
+  return WINC_OK;
+}
+
+ResultCode TargetProcess::GetProcessTime(ULONG64 *out_time) {
+  ULONG64 kernel_time, user_time;
+  if (!::GetProcessTimes(process_handle_.get(), NULL, NULL,
+                         reinterpret_cast<LPFILETIME>(&kernel_time),
+                         reinterpret_cast<LPFILETIME>(&user_time)))
+    return WINC_ERROR_RUN;
+  *out_time = kernel_time + user_time;
+  return WINC_OK;
+}
+
+ResultCode TargetProcess::GetProcessCycle(ULONG64 *out_cycle) {
+  if (!::QueryProcessCycleTime(process_handle_.get(), out_cycle))
+    return WINC_ERROR_RUN;
+  return WINC_OK;
+}
+
+ResultCode TargetProcess::GetProcessPeakMemory(SIZE_T *out_size) {
+  PROCESS_MEMORY_COUNTERS pmc;
+  if (!::GetProcessMemoryInfo(process_handle_.get(), &pmc, sizeof(pmc)))
+    return WINC_ERROR_RUN;
+  *out_size = pmc.PeakPagefileUsage;
+  return WINC_OK;
+}
+
+ResultCode TargetProcess::GetJobPeakMemory(SIZE_T *out_size) {
+  JOBOBJECT_EXTENDED_LIMIT_INFORMATION limit;
+  ResultCode rc = job_object_->GetBasicLimit(&limit);
+  if (rc != WINC_OK)
+    return rc;
+  *out_size = limit.PeakJobMemoryUsed;
   return WINC_OK;
 }
 
