@@ -138,7 +138,7 @@ ResultCode Container::Spawn(const wchar_t *exe_path,
   }
 
   Debugger *debugger = new Debugger;
-  rc = debugger->Init(pi.hProcess);
+  rc = debugger->Init(pi.hProcess, pi.dwProcessId);
   if (rc != WINC_OK) {
     ::TerminateProcess(pi.hProcess, 1);
     return rc;

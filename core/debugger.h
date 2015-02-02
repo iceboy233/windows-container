@@ -11,12 +11,24 @@
 
 namespace winc {
 
+DWORD WINAPI DebuggerThread(PVOID param);
+
 class Debugger {
 public:
-  Debugger() =default;
-  ~Debugger() =default;
+  Debugger()
+    : process_id_(0)
+    {}
+  ~Debugger();
 
-  ResultCode Init(HANDLE process);
+  ResultCode Init(HANDLE process, DWORD process_id);
+
+private:
+  friend DWORD WINAPI DebuggerThread(PVOID param);
+  void HandleExitProcess(NTSTATUS exit_status);
+  void HandleException(const EXCEPTION_RECORD &exception_record);
+
+private:
+  DWORD process_id_;
 
 private:
   Debugger(Debugger &) =delete;

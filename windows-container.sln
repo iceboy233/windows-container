@@ -22,6 +22,14 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test_std_handles", "tests\t
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "payload_isort", "tests\payload_isort\payload_isort.vcxproj", "{F5CD1506-7046-4DDB-9487-5578A70ADA0C}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "payload_exception", "tests\payload_exception\payload_exception.vcxproj", "{06A225DE-307D-4FC8-9F8A-CE49462D234E}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test_exception", "tests\test_exception\test_exception.vcxproj", "{CB32B455-6D38-4F6A-BAE7-1661E231B06E}"
+	ProjectSection(ProjectDependencies) = postProject
+		{06A225DE-307D-4FC8-9F8A-CE49462D234E} = {06A225DE-307D-4FC8-9F8A-CE49462D234E}
+		{E2E27BFD-4837-4265-8F0F-F1A39CA7BCB2} = {E2E27BFD-4837-4265-8F0F-F1A39CA7BCB2}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -48,6 +56,14 @@ Global
 		{F5CD1506-7046-4DDB-9487-5578A70ADA0C}.Debug|Win32.Build.0 = Debug|Win32
 		{F5CD1506-7046-4DDB-9487-5578A70ADA0C}.Release|Win32.ActiveCfg = Release|Win32
 		{F5CD1506-7046-4DDB-9487-5578A70ADA0C}.Release|Win32.Build.0 = Release|Win32
+		{06A225DE-307D-4FC8-9F8A-CE49462D234E}.Debug|Win32.ActiveCfg = Debug|Win32
+		{06A225DE-307D-4FC8-9F8A-CE49462D234E}.Debug|Win32.Build.0 = Debug|Win32
+		{06A225DE-307D-4FC8-9F8A-CE49462D234E}.Release|Win32.ActiveCfg = Release|Win32
+		{06A225DE-307D-4FC8-9F8A-CE49462D234E}.Release|Win32.Build.0 = Release|Win32
+		{CB32B455-6D38-4F6A-BAE7-1661E231B06E}.Debug|Win32.ActiveCfg = Debug|Win32
+		{CB32B455-6D38-4F6A-BAE7-1661E231B06E}.Debug|Win32.Build.0 = Debug|Win32
+		{CB32B455-6D38-4F6A-BAE7-1661E231B06E}.Release|Win32.ActiveCfg = Release|Win32
+		{CB32B455-6D38-4F6A-BAE7-1661E231B06E}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -57,5 +73,7 @@ Global
 		{09339149-1D4A-4186-A6F2-972B6B72C33B} = {ECCD9906-8B0C-445E-A7D7-935253EF1037}
 		{4EF4D16D-576B-48CE-9846-76C003D555AE} = {ECCD9906-8B0C-445E-A7D7-935253EF1037}
 		{F5CD1506-7046-4DDB-9487-5578A70ADA0C} = {ECCD9906-8B0C-445E-A7D7-935253EF1037}
+		{06A225DE-307D-4FC8-9F8A-CE49462D234E} = {ECCD9906-8B0C-445E-A7D7-935253EF1037}
+		{CB32B455-6D38-4F6A-BAE7-1661E231B06E} = {ECCD9906-8B0C-445E-A7D7-935253EF1037}
 	EndGlobalSection
 EndGlobal
