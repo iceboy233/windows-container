@@ -12,22 +12,22 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="container.h" />
-    <ClInclude Include="debugger.h" />
     <ClInclude Include="desktop.h" />
     <ClInclude Include="job_object.h" />
     <ClInclude Include="logon.h" />
     <ClInclude Include="sid.h" />
     <ClInclude Include="policy.h" />
+    <ClInclude Include="target.h" />
     <ClInclude Include="util.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="debugger.cc" />
     <ClCompile Include="desktop.cc" />
     <ClCompile Include="container.cc" />
     <ClCompile Include="job_object.cc" />
     <ClCompile Include="logon.cc" />
     <ClCompile Include="policy.cc" />
     <ClCompile Include="sid.cc" />
+    <ClCompile Include="target.cc" />
     <ClCompile Include="util.cc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -61,19 +61,14 @@
     <Import Project="..\windows-container.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(SolutionDir)third_party\ndk;$(IncludePath)</IncludePath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>$(SolutionDir)third_party\ndk;$(IncludePath)</IncludePath>
-  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32_NO_STATUS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -89,7 +84,6 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <PreprocessorDefinitions>WIN32_NO_STATUS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

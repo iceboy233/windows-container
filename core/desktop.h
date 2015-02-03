@@ -14,10 +14,10 @@ namespace winc {
 
 class Desktop {
 public:
-  virtual ~Desktop() =default;
-  virtual bool IsDefaultDesktop() const =0;
-  virtual HDESK GetDesktopHandle() const =0;
-  virtual HWINSTA GetWinstaHandle() const =0;
+  virtual ~Desktop() = default;
+  virtual bool IsDefaultDesktop() const = 0;
+  virtual HDESK GetDesktopHandle() const = 0;
+  virtual HWINSTA GetWinstaHandle() const = 0;
   ResultCode GetFullName(const wchar_t **out_name) const;
 
 private:
@@ -26,18 +26,18 @@ private:
 
 class DesktopWithDefaultWinsta : public Desktop {
 public:
-  virtual HWINSTA GetWinstaHandle() const {
+  virtual HWINSTA GetWinstaHandle() const override {
     return ::GetProcessWindowStation();
   }
 };
 
 class DefaultDesktop : public DesktopWithDefaultWinsta {
 public:
-  virtual bool IsDefaultDesktop() const {
+  virtual bool IsDefaultDesktop() const override {
     return true;
   }
 
-  virtual HDESK GetDesktopHandle() const {
+  virtual HDESK GetDesktopHandle() const override {
     return ::GetThreadDesktop(::GetCurrentThreadId());
   }
 };
@@ -45,15 +45,15 @@ public:
 class AlternateDesktop : public DesktopWithDefaultWinsta {
 public:
   AlternateDesktop();
-  virtual ~AlternateDesktop();
+  virtual ~AlternateDesktop() override;
 
   ResultCode Init(DWORD access);
 
-  virtual bool IsDefaultDesktop() const {
+  virtual bool IsDefaultDesktop() const override {
     return false;
   }
 
-  virtual HDESK GetDesktopHandle() const {
+  virtual HDESK GetDesktopHandle() const override {
     return hdesk_;
   }
 
@@ -61,8 +61,8 @@ private:
   HDESK hdesk_;
 
 private:
-  AlternateDesktop(const AlternateDesktop &) =delete;
-  void operator=(const AlternateDesktop &) =delete;
+  AlternateDesktop(const AlternateDesktop &) = delete;
+  void operator=(const AlternateDesktop &) = delete;
 };
 
 }

@@ -18,26 +18,29 @@ int main() {
   wcscat_s(cmd_path, L"\\cmd.exe");
 
   Container c;
-  TargetProcess *process;
-  ResultCode rc = c.Spawn(cmd_path, nullptr, nullptr, &process);
+  WaitableTarget t;
+  ResultCode rc = c.Spawn(cmd_path, &t, nullptr, nullptr);
   if (rc != WINC_OK) {
     fprintf(stderr, "Spawn error %d\n", rc);
     exit(1);
   }
 
   ::SetConsoleCtrlHandler(NULL, TRUE);
-  fprintf(stderr, "PID %" PRIu32 " CREATED\n", process->process_id());
-  rc = process->Run();
+  rc = t.Start();
   if (rc != WINC_OK) {
     fprintf(stderr, "Run error %d\n", rc);
     exit(1);
   }
+  t.Wait();
 
+  DWORD exit_code;
   ULONG64 time;
   SIZE_T peak_mem;
-  process->GetJobTime(&time);
-  process->GetJobPeakMemory(&peak_mem);
-  fprintf(stderr, "PID %" PRIu32 "  TIME %" PRIu64 "  MEM %" PRIu64 "\n",
-    process->process_id(), time / 10000, static_cast<uint64_t>(peak_mem));
-  delete process;
+  t.GetProcessExitCode(&exit_code);
+  t.GetJobTime(&time);
+  t.GetJobPeakMemory(&peak_mem);
+  fprintf(stderr, "PID %" PRIu32 "  EXIT %08" PRIX32 "  "
+                  "TIME %" PRIu64 "  MEM %" PRIu64 "\n",
+    t.process_id(), exit_code,
+    time / 10000, static_cast<uint64_t>(peak_mem));
 }

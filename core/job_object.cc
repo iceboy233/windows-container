@@ -4,10 +4,86 @@
 
 #include "core/job_object.h"
 
+#include "core/container.h"
+#include "core/target.h"
+
 namespace winc {
 
+class JobObjectSharedResource {
+public:
+  JobObjectSharedResource()
+    : completion_port(NULL)
+    , thread_created(false) {
+    ::InitializeCriticalSection(&thread_crit_sec);
+  }
+
+  ~JobObjectSharedResource() {
+    if (completion_port)
+      ::CloseHandle(completion_port);
+    ::DeleteCriticalSection(&thread_crit_sec);
+  }
+
+  ResultCode Init() {
+    HANDLE port = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE,
+                                           NULL, 0, 0);
+    if (!port)
+      return WINC_ERROR_COMPLETION_PORT;
+    completion_port = port;
+    return WINC_OK;
+  }
+
+  ResultCode GuardCompletionPortThread() {
+    if (!thread_created) {
+      ::EnterCriticalSection(&thread_crit_sec);
+      if (!thread_created) {
+        HANDLE thread = ::CreateThread(NULL, 0, JobObject::MessageThread,
+                                       this, 0, NULL);
+        if (!thread) {
+          ::LeaveCriticalSection(&thread_crit_sec);
+          return WINC_ERROR_COMPLETION_PORT;
+        }
+        ::CloseHandle(thread);
+        thread_created = true;
+      }
+      ::LeaveCriticalSection(&thread_crit_sec);
+    }
+    return WINC_OK;
+  }
+
+  HANDLE completion_port;
+  volatile bool thread_created;
+  CRITICAL_SECTION thread_crit_sec;
+};
+
+JobObjectSharedResource *g_shared = nullptr;
+
+ResultCode InitJobObjectSharedResource(JobObjectSharedResource **out_sr) {
+  JobObjectSharedResource *sr = g_shared;
+  if (sr != nullptr) {
+    *out_sr = sr;
+    return WINC_OK;
+  }
+
+  // Create a new shared resource, and then set the global pointer
+  // by interlocked operation
+  sr = new JobObjectSharedResource;
+  ResultCode rc = sr->Init();
+  if (rc != WINC_OK)
+    return rc;
+  PVOID original = ::InterlockedCompareExchangePointer(
+      reinterpret_cast<PVOID *>(&g_shared), sr, nullptr);
+  if (original) {
+    delete sr;
+    *out_sr = reinterpret_cast<JobObjectSharedResource *>(original);
+  } else {
+    *out_sr = sr;
+  }
+  return WINC_OK;
+}
+
 JobObject::~JobObject() {
-  ::CloseHandle(job_);
+  if (job_)
+    ::CloseHandle(job_);
 }
 
 ResultCode JobObject::Init() {
@@ -63,6 +139,55 @@ ResultCode JobObject::GetAccountInfo(
       info, sizeof(JOBOBJECT_BASIC_ACCOUNTING_INFORMATION), NULL))
     return WINC_ERROR_JOB_OBJECT;
   return WINC_OK;
+}
+
+ResultCode JobObject::AssociateCompletionPort(Target *target) {
+  JobObjectSharedResource *sr;
+  ResultCode rc = InitJobObjectSharedResource(&sr);
+  if (rc != WINC_OK)
+    return rc;
+  rc = sr->GuardCompletionPortThread();
+  if (rc != WINC_OK)
+    return rc;
+
+  JOBOBJECT_ASSOCIATE_COMPLETION_PORT port;
+  port.CompletionKey = target;
+  port.CompletionPort = sr->completion_port;
+  if (!::SetInformationJobObject(job_,
+                                 JobObjectAssociateCompletionPortInformation,
+                                 &port, sizeof(port)))
+    return WINC_ERROR_JOB_OBJECT;
+  return WINC_OK;
+}
+
+DWORD WINAPI JobObject::MessageThread(PVOID param) {
+  const ULONG ENTRY_PER_CALL = 16;
+  JobObjectSharedResource *sr =
+    reinterpret_cast<JobObjectSharedResource *>(param);
+  OVERLAPPED_ENTRY entries[ENTRY_PER_CALL];
+  ULONG actual_count;
+  while (::GetQueuedCompletionStatusEx(sr->completion_port, entries,
+                                       ENTRY_PER_CALL, &actual_count,
+                                       INFINITE, FALSE)) {
+    for (OVERLAPPED_ENTRY *entry = entries;
+         entry != entries + actual_count; ++entry) {
+      Target *target =
+          reinterpret_cast<Target *>(entry->lpCompletionKey);
+      switch (entry->dwNumberOfBytesTransferred) {
+      case JOB_OBJECT_MSG_NEW_PROCESS:
+        target->OnNewProcess(reinterpret_cast<DWORD>(entry->lpOverlapped));
+        break;
+      case JOB_OBJECT_MSG_EXIT_PROCESS:
+      case JOB_OBJECT_MSG_ABNORMAL_EXIT_PROCESS:
+        target->OnExitProcess(reinterpret_cast<DWORD>(entry->lpOverlapped));
+        break;
+      case JOB_OBJECT_MSG_ACTIVE_PROCESS_ZERO:
+        target->OnExitAll();
+        break;
+      }
+    }
+  }
+  return 0xDEADBEEF;
 }
 
 }

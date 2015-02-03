@@ -42,8 +42,8 @@ private:
   LPPROC_THREAD_ATTRIBUTE_LIST data_;
   
 private:
-  ProcThreadAttributeList(const ProcThreadAttributeList &) =delete;
-  void operator=(const ProcThreadAttributeList &) =delete;
+  ProcThreadAttributeList(const ProcThreadAttributeList &) = delete;
+  void operator=(const ProcThreadAttributeList &) = delete;
 };
 
 }

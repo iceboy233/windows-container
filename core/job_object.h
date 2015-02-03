@@ -11,8 +11,15 @@
 
 namespace winc {
 
+class JobObjectSharedResource;
+class Target;
+
 class JobObject {
 public:
+  JobObject()
+    : job_(NULL)
+    {}
+
   ~JobObject();
   ResultCode Init();
   ResultCode AssignProcess(HANDLE process);
@@ -21,6 +28,14 @@ public:
   ResultCode GetUILimit(JOBOBJECT_BASIC_UI_RESTRICTIONS *ui_limit);
   ResultCode SetUILimit(const JOBOBJECT_BASIC_UI_RESTRICTIONS &ui_limit);
   ResultCode GetAccountInfo(JOBOBJECT_BASIC_ACCOUNTING_INFORMATION *info);
+
+private:
+  static DWORD WINAPI MessageThread(PVOID param);
+
+private:
+  friend class JobObjectSharedResource;
+  friend class Target;
+  ResultCode JobObject::AssociateCompletionPort(Target *target);
 
 private:
   HANDLE job_;

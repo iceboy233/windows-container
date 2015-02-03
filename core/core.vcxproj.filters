@@ -8,7 +8,7 @@
     <ClInclude Include="job_object.h" />
     <ClInclude Include="util.h" />
     <ClInclude Include="logon.h" />
-    <ClInclude Include="debugger.h" />
+    <ClInclude Include="target.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="sid.cc" />
@@ -18,6 +18,6 @@
     <ClCompile Include="job_object.cc" />
     <ClCompile Include="logon.cc" />
     <ClCompile Include="util.cc" />
-    <ClCompile Include="debugger.cc" />
+    <ClCompile Include="target.cc" />
   </ItemGroup>
 </Project>

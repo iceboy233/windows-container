@@ -8,5 +8,6 @@
 #include <winc_types.h>
 
 #include "core/container.h"
+#include "core/target.h"
 
 #endif

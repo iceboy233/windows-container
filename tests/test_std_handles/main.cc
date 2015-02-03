@@ -48,23 +48,18 @@ int call_aplusb(Container &c, const wchar_t *exe_path, int a, int b) {
   IoHandles io_handles = {};
   io_handles.stdin_handle = stdin_pipe[0];
   io_handles.stdout_handle = stdout_pipe[1];
-  TargetProcess *process;
-  ResultCode rc = c.Spawn(exe_path, nullptr, &io_handles, &process);
+  Target t;
+  ResultCode rc = c.Spawn(exe_path, &t, nullptr, &io_handles);
   if (rc != WINC_OK)
     return -1;
-  unique_ptr<TargetProcess> process_holder(process);
   stdin_pipe_holder.reset();
   stdout_pipe_holder.reset();
-
-  // TODO(iceboy): Potential deadlock, fix it when the async iface is ready
+  rc = t.Start();
+  if (rc != WINC_OK)
+    return -1;
   if (fprintf(writefp.get(), "%d %d\n", a, b) == -1)
     return -1;
   writefp.reset();
-
-  rc = process->Run();
-  if (rc != WINC_OK)
-    return -1;
-
   int ret;
   if (fscanf_s(readfp.get(), "%d", &ret) == EOF)
     return -1;
@@ -93,7 +88,6 @@ int main() {
       }
       ++spawned;
     } while (::GetTickCount() - start < 1000);
-    printf("Spawn %u process in 1 second\n", spawned);
-    ::Sleep(1000);
+    printf("Spawned %u process in 1 second\n", spawned);
   }
 }

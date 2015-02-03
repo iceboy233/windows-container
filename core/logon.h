@@ -16,8 +16,8 @@ public:
     : is_sid_cached_(false)
     {}
 
-  virtual ~Logon() =default;
-  virtual HANDLE GetToken() const =0;
+  virtual ~Logon() = default;
+  virtual HANDLE GetToken() const = 0;
   ResultCode GetGroupSid(Sid *out_sid) const;
 
 private:
@@ -31,11 +31,11 @@ private:
 class CurrentLogon : public Logon {
 public:
   CurrentLogon();
-  virtual ~CurrentLogon();
+  virtual ~CurrentLogon() override;
 
   ResultCode Init(DWORD access);
 
-  virtual HANDLE GetToken() const {
+  virtual HANDLE GetToken() const override {
     return token_;
   }
 
@@ -43,8 +43,8 @@ private:
   HANDLE token_;
 
 private:
-  CurrentLogon(const CurrentLogon &) =delete;
-  void operator=(const CurrentLogon &) =delete;
+  CurrentLogon(const CurrentLogon &) = delete;
+  void operator=(const CurrentLogon &) = delete;
 };
 
 }
