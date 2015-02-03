@@ -145,7 +145,7 @@ ResultCode Container::CreateDefaultPolicy(Policy **out_policy) {
   }
 
   Policy *policy = new Policy(unique_ptr<Logon>(logon));
-  //rc = policy->UseAlternateDesktop();
+  rc = policy->UseAlternateDesktop();
   if (rc != WINC_OK)
     return rc;
   policy->RestrictSid(logon_sid);
