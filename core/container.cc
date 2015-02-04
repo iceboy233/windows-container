@@ -118,8 +118,11 @@ ResultCode Container::Spawn(const wchar_t *exe_path,
     NULL, NULL, inherit_count ? TRUE : FALSE,
     CREATE_BREAKAWAY_FROM_JOB | CREATE_SUSPENDED,
     NULL, NULL, &si.StartupInfo, &pi);
-  if (!success)
+  if (!success) {
+    if (::GetLastError() == ERROR_PRIVILEGE_NOT_HELD)
+      return WINC_PRIVILEGE_NOT_HELD;
     return WINC_ERROR_SPAWN;
+  }
 
   // Assign the process to the job object as soon as possible
   rc = job_object->AssignProcess(pi.hProcess);
@@ -134,17 +137,18 @@ ResultCode Container::Spawn(const wchar_t *exe_path,
 }
 
 ResultCode Container::CreateDefaultPolicy(Policy **out_policy) {
-  CurrentLogon *logon = new CurrentLogon;
+  auto logon = make_unique<CurrentLogon>();
   ResultCode rc = logon->Init(TOKEN_QUERY | TOKEN_DUPLICATE |
                               TOKEN_ASSIGN_PRIMARY);
+  if (rc != WINC_OK)
+    return rc;
+
   Sid logon_sid;
   rc = logon->GetGroupSid(&logon_sid);
-  if (rc != WINC_OK) {
-    delete logon;
+  if (rc != WINC_OK)
     return rc;
-  }
 
-  Policy *policy = new Policy(unique_ptr<Logon>(logon));
+  Policy *policy = new Policy(unique_ptr<Logon>(logon.release()));
   rc = policy->UseAlternateDesktop();
   if (rc != WINC_OK)
     return rc;

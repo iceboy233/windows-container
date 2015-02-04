@@ -5,6 +5,10 @@
 #ifndef WINC_CORE_LOGON_H_
 #define WINC_CORE_LOGON_H_
 
+#include <Windows.h>
+#include <Aclapi.h>
+#include <string>
+
 #include <winc_types.h>
 #include "core/sid.h"
 
@@ -18,6 +22,8 @@ public:
 
   virtual ~Logon() = default;
   virtual HANDLE GetToken() const = 0;
+  virtual ResultCode GrantAccess(HANDLE object, SE_OBJECT_TYPE object_type,
+                                 DWORD allowed_access) const = 0;
   ResultCode GetGroupSid(Sid *out_sid) const;
 
 private:
@@ -28,23 +34,47 @@ private:
   mutable Sid sid_cache_;
 };
 
-class CurrentLogon : public Logon {
+class LogonWithOwnedToken : public Logon {
 public:
-  CurrentLogon();
-  virtual ~CurrentLogon() override;
+  LogonWithOwnedToken()
+    : token_(NULL)
+    {}
 
-  ResultCode Init(DWORD access);
+  virtual ~LogonWithOwnedToken() override;
 
   virtual HANDLE GetToken() const override {
     return token_;
+  }
+
+protected:
+  void set_token(HANDLE token) {
+    token_ = token;
   }
 
 private:
   HANDLE token_;
 
 private:
-  CurrentLogon(const CurrentLogon &) = delete;
-  void operator=(const CurrentLogon &) = delete;
+  LogonWithOwnedToken(const LogonWithOwnedToken &) = delete;
+  void operator=(const LogonWithOwnedToken &) = delete;
+};
+
+class CurrentLogon : public LogonWithOwnedToken {
+public:
+  ResultCode Init(DWORD access);
+
+  virtual ResultCode GrantAccess(HANDLE object, SE_OBJECT_TYPE object_type,
+                                 DWORD allowed_access) const override {
+    return WINC_OK;
+  }
+};
+
+class UserLogon : public LogonWithOwnedToken {
+public:
+  ResultCode Init(const std::wstring &username,
+                  const std::wstring &password);
+  virtual ResultCode GrantAccess(HANDLE object, SE_OBJECT_TYPE object_type,
+                                 DWORD allowed_access) const override;
 };
 
 }

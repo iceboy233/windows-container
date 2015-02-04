@@ -25,7 +25,7 @@ public:
 
   ResultCode Init() {
     HANDLE port = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE,
-                                           NULL, 0, 0);
+                                           NULL, 0, 1);
     if (!port)
       return WINC_ERROR_COMPLETION_PORT;
     completion_port = port;

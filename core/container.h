@@ -14,8 +14,6 @@ namespace winc {
 
 class Policy;
 class Target;
-class Desktop;
-class JobObject;
 
 struct IoHandles {
   HANDLE stdin_handle;

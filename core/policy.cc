@@ -28,6 +28,14 @@ ResultCode Policy::UseAlternateDesktop() {
       DESKTOP_SWITCHDESKTOP | READ_CONTROL | WRITE_DAC);
   if (rc != WINC_OK)
     return rc;
+  rc = logon_->GrantAccess(desktop->GetDesktopHandle(), SE_WINDOW_OBJECT,
+                           GENERIC_READ | GENERIC_WRITE | GENERIC_EXECUTE);
+  if (rc != WINC_OK)
+    return rc;
+  rc = logon_->GrantAccess(desktop->GetWinstaHandle(), SE_WINDOW_OBJECT,
+                           GENERIC_READ | GENERIC_WRITE | GENERIC_EXECUTE);
+  if (rc != WINC_OK)
+    return rc;
   desktop_ = move(desktop);
   return WINC_OK;
 }

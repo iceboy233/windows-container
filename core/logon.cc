@@ -44,11 +44,7 @@ ResultCode Logon::InitSidCache() const {
   return WINC_ERROR_TOKEN;
 }
 
-CurrentLogon::CurrentLogon()
-  : token_(NULL)
-  {}
-
-CurrentLogon::~CurrentLogon() {
+LogonWithOwnedToken::~LogonWithOwnedToken() {
   if (token_ != NULL)
     ::CloseHandle(token_);
 }
@@ -57,7 +53,55 @@ ResultCode CurrentLogon::Init(DWORD access) {
   HANDLE token;
   if (!::OpenProcessToken(::GetCurrentProcess(), access, &token))
     return WINC_ERROR_TOKEN;
-  token_ = token;
+  set_token(token);
+  return WINC_OK;
+}
+
+ResultCode UserLogon::Init(const std::wstring &username,
+                           const std::wstring &password) {
+  HANDLE token;
+  if (!::LogonUserW(username.c_str(), L".", password.c_str(),
+                    LOGON32_LOGON_INTERACTIVE, LOGON32_PROVIDER_DEFAULT,
+                    &token))
+    return WINC_ERROR_TOKEN;
+  set_token(token);
+  return WINC_OK;
+}
+
+ResultCode UserLogon::GrantAccess(HANDLE object, SE_OBJECT_TYPE object_type,
+                                  DWORD allowed_access) const {
+  Sid sid;
+  ResultCode rc = GetGroupSid(&sid);
+  if (rc != WINC_OK)
+    return rc;
+
+  PACL old_dacl, new_dacl;
+  PSECURITY_DESCRIPTOR sd;
+  if (::GetSecurityInfo(object, object_type, DACL_SECURITY_INFORMATION,
+                        NULL, NULL, &old_dacl, NULL, &sd) != ERROR_SUCCESS)
+    return WINC_ERROR_TOKEN;
+
+  EXPLICIT_ACCESSW ea;
+  ea.grfAccessPermissions = allowed_access;
+  ea.grfAccessMode = GRANT_ACCESS;
+  ea.grfInheritance = 0;
+  ea.Trustee.pMultipleTrustee = NULL;
+  ea.Trustee.MultipleTrusteeOperation = NO_MULTIPLE_TRUSTEE;
+  ea.Trustee.TrusteeForm = TRUSTEE_IS_SID;
+  ea.Trustee.TrusteeType = TRUSTEE_IS_GROUP;
+  ea.Trustee.ptstrName = reinterpret_cast<LPWSTR>(sid.data());
+  if (::SetEntriesInAclW(1, &ea, old_dacl, &new_dacl) != ERROR_SUCCESS) {
+    ::LocalFree(sd);
+    return WINC_ERROR_TOKEN;
+  }
+
+  DWORD ret = ::SetSecurityInfo(object, object_type,
+                                DACL_SECURITY_INFORMATION,
+                                NULL, NULL, new_dacl, NULL);
+  ::LocalFree(new_dacl);
+  ::LocalFree(sd);
+  if (ret != ERROR_SUCCESS)
+    return WINC_ERROR_TOKEN;
   return WINC_OK;
 }
 
