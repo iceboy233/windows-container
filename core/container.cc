@@ -8,6 +8,7 @@
 #include <memory>
 
 #include <winc_types.h>
+#include "core/ntnative.h"
 #include "core/policy.h"
 #include "core/desktop.h"
 #include "core/sid.h"
@@ -132,6 +133,25 @@ ResultCode Container::Spawn(const wchar_t *exe_path,
     ::TerminateProcess(pi.hProcess, 1);
     return rc;
   }
+
+  // Disable hard error of the target process
+  NTSTATUS status;
+  ULONG default_hard_error_mode;
+  status = ::NtQueryInformationProcess(pi.hProcess,
+                                       ProcessDefaultHardErrorMode,
+                                       &default_hard_error_mode,
+                                       sizeof(default_hard_error_mode),
+                                       NULL);
+  if (!NT_SUCCESS(status))
+    return WINC_ERROR_SPAWN;
+  default_hard_error_mode &= ~1;
+  status = ::NtSetInformationProcess(pi.hProcess,
+                                     ProcessDefaultHardErrorMode,
+                                     &default_hard_error_mode,
+                                     sizeof(default_hard_error_mode));
+  if (!NT_SUCCESS(status))
+    return WINC_ERROR_SPAWN;
+
   return target->Init(pi.dwProcessId, job_object_holder,
                       process_holder, thread_holder);
 }

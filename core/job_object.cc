@@ -173,16 +173,27 @@ DWORD WINAPI JobObject::MessageThread(PVOID param) {
          entry != entries + actual_count; ++entry) {
       Target *target =
           reinterpret_cast<Target *>(entry->lpCompletionKey);
-      switch (entry->dwNumberOfBytesTransferred) {
-      case JOB_OBJECT_MSG_NEW_PROCESS:
-        target->OnNewProcess(reinterpret_cast<DWORD>(entry->lpOverlapped));
-        break;
-      case JOB_OBJECT_MSG_EXIT_PROCESS:
-      case JOB_OBJECT_MSG_ABNORMAL_EXIT_PROCESS:
-        target->OnExitProcess(reinterpret_cast<DWORD>(entry->lpOverlapped));
+      DWORD message_id = entry->dwNumberOfBytesTransferred;
+      DWORD process_id;
+      switch (message_id) {
+      case JOB_OBJECT_MSG_ACTIVE_PROCESS_LIMIT:
+        target->OnActiveProcessLimit();
         break;
       case JOB_OBJECT_MSG_ACTIVE_PROCESS_ZERO:
         target->OnExitAll();
+        break;
+      case JOB_OBJECT_MSG_NEW_PROCESS:
+        process_id = reinterpret_cast<DWORD>(entry->lpOverlapped);
+        target->OnNewProcess(process_id);
+        break;
+      case JOB_OBJECT_MSG_EXIT_PROCESS:
+      case JOB_OBJECT_MSG_ABNORMAL_EXIT_PROCESS:
+        process_id = reinterpret_cast<DWORD>(entry->lpOverlapped);
+        target->OnExitProcess(process_id);
+        break;
+      case JOB_OBJECT_MSG_JOB_MEMORY_LIMIT:
+        process_id = reinterpret_cast<DWORD>(entry->lpOverlapped);
+        target->OnMemoryLimit(process_id);
         break;
       }
     }

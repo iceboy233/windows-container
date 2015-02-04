@@ -48,9 +48,11 @@ protected:
 
   ResultCode ListenToEvents();
   friend class JobObject;
-  virtual void OnNewProcess(DWORD process_id) {};
-  virtual void OnExitProcess(DWORD process_id) {};
-  virtual void OnExitAll() {};
+  virtual void OnActiveProcessLimit() {}
+  virtual void OnExitAll() {}
+  virtual void OnNewProcess(DWORD process_id) {}
+  virtual void OnExitProcess(DWORD process_id) {}
+  virtual void OnMemoryLimit(DWORD process_id) {}
 
 private:
   std::unique_ptr<JobObject> job_object_;

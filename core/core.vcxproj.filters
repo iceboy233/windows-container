@@ -9,6 +9,7 @@
     <ClInclude Include="util.h" />
     <ClInclude Include="logon.h" />
     <ClInclude Include="target.h" />
+    <ClInclude Include="ntnative.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="sid.cc" />

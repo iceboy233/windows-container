@@ -15,6 +15,7 @@
     <ClInclude Include="desktop.h" />
     <ClInclude Include="job_object.h" />
     <ClInclude Include="logon.h" />
+    <ClInclude Include="ntnative.h" />
     <ClInclude Include="sid.h" />
     <ClInclude Include="policy.h" />
     <ClInclude Include="target.h" />

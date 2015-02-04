@@ -5,10 +5,9 @@
 // This program generates random sequence of N elements in O(N) time,
 // and then use introsort to sort it in O(NlogN) time.
 
-#define NOMINMAX
 #include <Windows.h>
-#include <malloc.h>
 #include <cinttypes>
+#include <cstdio>
 #include <numeric>
 #include <algorithm>
 
