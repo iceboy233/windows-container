@@ -4,8 +4,12 @@
 
 #include "core/job_object.h"
 
+#include <unordered_set>
+
 #include "core/container.h"
 #include "core/target.h"
+
+using std::unordered_set;
 
 namespace winc {
 
@@ -14,13 +18,13 @@ public:
   JobObjectSharedResource()
     : completion_port(NULL)
     , thread_created(false) {
-    ::InitializeCriticalSection(&thread_crit_sec);
+    ::InitializeCriticalSection(&crit_sec);
   }
 
   ~JobObjectSharedResource() {
     if (completion_port)
       ::CloseHandle(completion_port);
-    ::DeleteCriticalSection(&thread_crit_sec);
+    ::DeleteCriticalSection(&crit_sec);
   }
 
   ResultCode Init() {
@@ -34,25 +38,26 @@ public:
 
   ResultCode GuardCompletionPortThread() {
     if (!thread_created) {
-      ::EnterCriticalSection(&thread_crit_sec);
+      ::EnterCriticalSection(&crit_sec);
       if (!thread_created) {
         HANDLE thread = ::CreateThread(NULL, 0, JobObject::MessageThread,
                                        this, 0, NULL);
         if (!thread) {
-          ::LeaveCriticalSection(&thread_crit_sec);
+          ::LeaveCriticalSection(&crit_sec);
           return WINC_ERROR_COMPLETION_PORT;
         }
         ::CloseHandle(thread);
         thread_created = true;
       }
-      ::LeaveCriticalSection(&thread_crit_sec);
+      ::LeaveCriticalSection(&crit_sec);
     }
     return WINC_OK;
   }
 
   HANDLE completion_port;
   volatile bool thread_created;
-  CRITICAL_SECTION thread_crit_sec;
+  CRITICAL_SECTION crit_sec;
+  unordered_set<Target *> attached_target;
 };
 
 JobObjectSharedResource *g_shared = nullptr;
@@ -150,6 +155,10 @@ ResultCode JobObject::AssociateCompletionPort(Target *target) {
   if (rc != WINC_OK)
     return rc;
 
+  ::EnterCriticalSection(&sr->crit_sec);
+  sr->attached_target.insert(target);
+  ::LeaveCriticalSection(&sr->crit_sec);
+
   JOBOBJECT_ASSOCIATE_COMPLETION_PORT port;
   port.CompletionKey = target;
   port.CompletionPort = sr->completion_port;
@@ -158,6 +167,13 @@ ResultCode JobObject::AssociateCompletionPort(Target *target) {
                                  &port, sizeof(port)))
     return WINC_ERROR_JOB_OBJECT;
   return WINC_OK;
+}
+
+void JobObject::DeassociateCompletionPort(Target *target) {
+  JobObjectSharedResource *sr = g_shared;
+  ::EnterCriticalSection(&sr->crit_sec);
+  sr->attached_target.erase(target);
+  ::LeaveCriticalSection(&sr->crit_sec);
 }
 
 DWORD WINAPI JobObject::MessageThread(PVOID param) {
@@ -173,29 +189,33 @@ DWORD WINAPI JobObject::MessageThread(PVOID param) {
          entry != entries + actual_count; ++entry) {
       Target *target =
           reinterpret_cast<Target *>(entry->lpCompletionKey);
-      DWORD message_id = entry->dwNumberOfBytesTransferred;
-      DWORD process_id;
-      switch (message_id) {
-      case JOB_OBJECT_MSG_ACTIVE_PROCESS_LIMIT:
-        target->OnActiveProcessLimit();
-        break;
-      case JOB_OBJECT_MSG_ACTIVE_PROCESS_ZERO:
-        target->OnExitAll();
-        break;
-      case JOB_OBJECT_MSG_NEW_PROCESS:
-        process_id = reinterpret_cast<DWORD>(entry->lpOverlapped);
-        target->OnNewProcess(process_id);
-        break;
-      case JOB_OBJECT_MSG_EXIT_PROCESS:
-      case JOB_OBJECT_MSG_ABNORMAL_EXIT_PROCESS:
-        process_id = reinterpret_cast<DWORD>(entry->lpOverlapped);
-        target->OnExitProcess(process_id);
-        break;
-      case JOB_OBJECT_MSG_JOB_MEMORY_LIMIT:
-        process_id = reinterpret_cast<DWORD>(entry->lpOverlapped);
-        target->OnMemoryLimit(process_id);
-        break;
+      ::EnterCriticalSection(&sr->crit_sec);
+      if (sr->attached_target.find(target) != sr->attached_target.end()) {
+        DWORD message_id = entry->dwNumberOfBytesTransferred;
+        DWORD process_id;
+        switch (message_id) {
+        case JOB_OBJECT_MSG_ACTIVE_PROCESS_LIMIT:
+          target->OnActiveProcessLimit();
+          break;
+        case JOB_OBJECT_MSG_ACTIVE_PROCESS_ZERO:
+          target->OnExitAll();
+          break;
+        case JOB_OBJECT_MSG_NEW_PROCESS:
+          process_id = reinterpret_cast<DWORD>(entry->lpOverlapped);
+          target->OnNewProcess(process_id);
+          break;
+        case JOB_OBJECT_MSG_EXIT_PROCESS:
+        case JOB_OBJECT_MSG_ABNORMAL_EXIT_PROCESS:
+          process_id = reinterpret_cast<DWORD>(entry->lpOverlapped);
+          target->OnExitProcess(process_id);
+          break;
+        case JOB_OBJECT_MSG_JOB_MEMORY_LIMIT:
+          process_id = reinterpret_cast<DWORD>(entry->lpOverlapped);
+          target->OnMemoryLimit(process_id);
+          break;
+        }
       }
+      ::LeaveCriticalSection(&sr->crit_sec);
     }
   }
   return 0xDEADBEEF;

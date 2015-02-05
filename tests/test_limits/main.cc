@@ -12,14 +12,29 @@
 
 using namespace winc;
 
-class MyTarget : public WaitableTarget {
+class MyTarget : public Target {
 public:
+  MyTarget()
+    : my_event_(NULL)
+    , listening_(false)
+    {}
+
+  virtual ~MyTarget() override {
+    if (listening_)
+      StopListenToEvents();
+    if (my_event_)
+      ::CloseHandle(my_event_);
+  }
+
   virtual ResultCode Init() override {
     HANDLE e = ::CreateEventW(NULL, TRUE, FALSE, NULL);
     if (!e)
       return WINC_ERROR_TARGET;
     my_event_ = e;
-    return WaitableTarget::Init();
+    ResultCode rc = StartListenToEvents();
+    if (rc != WINC_OK)
+      return rc;
+    return Target::Init();
   }
 
   virtual void OnActiveProcessLimit() override {
@@ -36,11 +51,12 @@ public:
   ResultCode Wait() {
     if (::WaitForSingleObject(my_event_, INFINITE) == WAIT_FAILED)
       return WINC_ERROR_TARGET;
-    return WaitableTarget::Wait();
+    return Target::WaitForProcess();
   }
 
 private:
   HANDLE my_event_;
+  bool listening_;
 };
 
 int main() {

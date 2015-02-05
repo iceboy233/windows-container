@@ -39,6 +39,12 @@ ResultCode Target::Start() {
   return WINC_OK;
 }
 
+ResultCode Target::WaitForProcess() {
+  if (::WaitForSingleObject(process_handle_.get(), INFINITE) == WAIT_FAILED)
+    return WINC_ERROR_TARGET;
+  return WINC_OK;
+}
+
 ResultCode Target::GetJobTime(ULONG64 *out_time) {
   JOBOBJECT_BASIC_ACCOUNTING_INFORMATION info;
   ResultCode rc = job_object_->GetAccountInfo(&info);
@@ -89,34 +95,12 @@ ResultCode Target::GetProcessExitCode(DWORD *out_code) {
   return WINC_OK;
 }
 
-ResultCode Target::ListenToEvents() {
+ResultCode Target::StartListenToEvents() {
   return job_object_->AssociateCompletionPort(this);
 }
 
-WaitableTarget::~WaitableTarget() {
-  if (exit_all_event_)
-    ::CloseHandle(exit_all_event_);
-}
-
-ResultCode WaitableTarget::Wait(DWORD timeout) {
-  if (::WaitForSingleObject(exit_all_event_, timeout) == WAIT_FAILED)
-    return WINC_ERROR_TARGET;
-  return WINC_OK;
-}
-
-ResultCode WaitableTarget::Init() {
-  ResultCode rc = ListenToEvents();
-  if (rc != WINC_OK)
-    return rc;
-  HANDLE e = ::CreateEventW(NULL, TRUE, FALSE, NULL);
-  if (!e)
-    return WINC_ERROR_TARGET;
-  exit_all_event_ = e;
-  return Target::Init();
-}
-
-void WaitableTarget::OnExitAll() {
-  ::SetEvent(exit_all_event_);
+void Target::StopListenToEvents() {
+  JobObject::DeassociateCompletionPort(this);
 }
 
 }

@@ -34,6 +34,7 @@ public:
   }
 
   ResultCode Start();
+  ResultCode WaitForProcess();
   ResultCode GetJobTime(ULONG64 *out_time);
   ResultCode GetProcessTime(ULONG64 *out_time);
   ResultCode GetProcessCycle(ULONG64 *out_cycle);
@@ -46,7 +47,9 @@ protected:
     return WINC_OK;
   }
 
-  ResultCode ListenToEvents();
+  ResultCode StartListenToEvents();
+  void StopListenToEvents();
+
   friend class JobObject;
   virtual void OnActiveProcessLimit() {}
   virtual void OnExitAll() {}
@@ -63,26 +66,6 @@ private:
 private:
   Target(const Target &) = delete;
   void operator=(const Target &) = delete;
-};
-
-class WaitableTarget : public Target {
-public:
-  WaitableTarget()
-    : exit_all_event_(NULL)
-    {}
-
-  virtual ~WaitableTarget() override;
-  ResultCode Wait(DWORD timeout);
-  ResultCode Wait() {
-    return Wait(INFINITE);
-  }
-
-protected:
-  virtual ResultCode Init() override;
-  virtual void OnExitAll() override;
-
-private:
-  HANDLE exit_all_event_;
 };
 
 }

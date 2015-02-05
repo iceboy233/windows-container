@@ -18,7 +18,7 @@ int main() {
   wcscat_s(cmd_path, L"\\cmd.exe");
 
   Container c;
-  WaitableTarget t;
+  Target t;
   ResultCode rc = c.Spawn(cmd_path, &t, nullptr, nullptr);
   if (rc != WINC_OK) {
     fprintf(stderr, "Spawn error %d\n", rc);
@@ -31,7 +31,7 @@ int main() {
     fprintf(stderr, "Run error %d\n", rc);
     exit(1);
   }
-  t.Wait();
+  t.WaitForProcess();
 
   DWORD exit_code;
   ULONG64 time;

@@ -35,7 +35,8 @@ private:
 private:
   friend class JobObjectSharedResource;
   friend class Target;
-  ResultCode JobObject::AssociateCompletionPort(Target *target);
+  ResultCode AssociateCompletionPort(Target *target);
+  static void DeassociateCompletionPort(Target *target);
 
 private:
   HANDLE job_;

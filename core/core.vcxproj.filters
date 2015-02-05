@@ -9,7 +9,7 @@
     <ClInclude Include="logon.h" />
     <ClInclude Include="target.h" />
     <ClInclude Include="ntnative.h" />
-    <ClInclude Include="security.h" />
+    <ClInclude Include="sid.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="container.cc" />
@@ -19,6 +19,6 @@
     <ClCompile Include="logon.cc" />
     <ClCompile Include="util.cc" />
     <ClCompile Include="target.cc" />
-    <ClCompile Include="security.cc" />
+    <ClCompile Include="sid.cc" />
   </ItemGroup>
 </Project>
