@@ -61,7 +61,6 @@ int main() {
     exit(1);
   }
 
-  ::SetConsoleCtrlHandler(NULL, TRUE);
   rc = t.Start();
   if (rc != WINC_OK) {
     fprintf(stderr, "Start error %d\n", rc);

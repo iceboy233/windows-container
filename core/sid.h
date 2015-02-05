@@ -13,16 +13,25 @@ namespace winc {
 
 class Sid {
 public:
+  // Create SID with one sub-authority
+  ResultCode Init(PSID_IDENTIFIER_AUTHORITY identifier_authority,
+                  DWORD sub_authority);
+
   // Create SID object from existing raw SID data
-  void Init(SID *data);
+  ResultCode Init(PSID data);
 
   // Create SID object from well-known type identifier
   ResultCode Init(WELL_KNOWN_SID_TYPE type);
 
   // Access raw data of the SID, which should not be modified
   // Return non-const pointer for compatibility with the Windows API
-  SID *data() const {
-    return reinterpret_cast<SID *>(const_cast<BYTE *>(data_));
+  PSID data() const {
+    return reinterpret_cast<PSID>(const_cast<BYTE *>(data_));
+  }
+
+  // Get the length of the SID
+  DWORD GetLength() const {
+    return ::GetLengthSid(data());
   }
 
 private:

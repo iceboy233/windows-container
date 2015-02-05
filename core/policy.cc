@@ -4,6 +4,7 @@
 
 #include "core/policy.h"
 
+#include <Windows.h>
 #include <memory>
 #include <vector>
 
@@ -25,7 +26,7 @@ ResultCode Policy::UseAlternateDesktop() {
   auto desktop = make_unique<AlternateDesktop>();
   ResultCode rc = desktop->Init(
       DESKTOP_READOBJECTS | DESKTOP_CREATEWINDOW | DESKTOP_WRITEOBJECTS |
-      DESKTOP_SWITCHDESKTOP | READ_CONTROL | WRITE_DAC);
+      DESKTOP_SWITCHDESKTOP | READ_CONTROL | WRITE_DAC | WRITE_OWNER);
   if (rc != WINC_OK)
     return rc;
   rc = logon_->GrantAccess(desktop->GetDesktopHandle(), SE_WINDOW_OBJECT,
@@ -59,17 +60,9 @@ ResultCode Policy::InitRestrictedToken() {
     sids_to_restrict[i].Attributes = 0;
   }
 
-  HANDLE restricted_token;
-  BOOL success = ::CreateRestrictedToken(logon_->GetToken(),
-    DISABLE_MAX_PRIVILEGE, 0, NULL, 0, NULL,
-    sids_to_restrict.size(), sids_to_restrict.data(),
-    &restricted_token);
-
-  if (!success)
-    return WINC_ERROR_TOKEN;
-
-  restricted_token_ = restricted_token;
-  return WINC_OK;
+  return logon_->FilterToken(sids_to_restrict.data(),
+                             sids_to_restrict.size(),
+                             &restricted_token_);
 }
 
 ResultCode Policy::GetRestrictedToken(HANDLE *out_token) {

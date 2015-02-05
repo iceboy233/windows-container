@@ -16,7 +16,7 @@
     <ClInclude Include="job_object.h" />
     <ClInclude Include="logon.h" />
     <ClInclude Include="ntnative.h" />
-    <ClInclude Include="sid.h" />
+    <ClInclude Include="security.h" />
     <ClInclude Include="policy.h" />
     <ClInclude Include="target.h" />
     <ClInclude Include="util.h" />
@@ -27,7 +27,7 @@
     <ClCompile Include="job_object.cc" />
     <ClCompile Include="logon.cc" />
     <ClCompile Include="policy.cc" />
-    <ClCompile Include="sid.cc" />
+    <ClCompile Include="security.cc" />
     <ClCompile Include="target.cc" />
     <ClCompile Include="util.cc" />
   </ItemGroup>

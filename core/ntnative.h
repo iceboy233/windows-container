@@ -7,7 +7,7 @@
 #ifndef WINC_CORE_NTNATIVE_H_
 #define WINC_CORE_NTNATIVE_H_
 
-#include <winnt.h>
+#include <Windows.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,7 +22,7 @@ extern "C" {
 #define NT_ERROR(Status)                ((((ULONG)(Status)) >> 30) == 3)
 
 //
-// Process/Thread/Job Information Classes for NtQueryInformationProcess/Thread/Job
+// Process Information Classes for NtQueryInformationProcess
 //
 typedef enum _PROCESSINFOCLASS {
     ProcessBasicInformation,

@@ -11,7 +11,6 @@
 #include "core/ntnative.h"
 #include "core/policy.h"
 #include "core/desktop.h"
-#include "core/sid.h"
 #include "core/job_object.h"
 #include "core/util.h"
 #include "core/logon.h"
@@ -159,11 +158,12 @@ ResultCode Container::Spawn(const wchar_t *exe_path,
 ResultCode Container::CreateDefaultPolicy(Policy **out_policy) {
   auto logon = make_unique<CurrentLogon>();
   ResultCode rc = logon->Init(TOKEN_QUERY | TOKEN_DUPLICATE |
-                              TOKEN_ASSIGN_PRIMARY);
+                              TOKEN_ADJUST_DEFAULT | TOKEN_ASSIGN_PRIMARY,
+                              SECURITY_MANDATORY_LOW_RID);
   if (rc != WINC_OK)
     return rc;
 
-  Sid logon_sid;
+  Sid *logon_sid;
   rc = logon->GetGroupSid(&logon_sid);
   if (rc != WINC_OK)
     return rc;
@@ -172,7 +172,7 @@ ResultCode Container::CreateDefaultPolicy(Policy **out_policy) {
   rc = policy->UseAlternateDesktop();
   if (rc != WINC_OK)
     return rc;
-  policy->RestrictSid(logon_sid);
+  policy->RestrictSid(*logon_sid);
   policy->RestrictSid(WinBuiltinUsersSid);
   policy->RestrictSid(WinWorldSid);
   policy->SetJobObjectBasicLimit(JOB_OBJECT_LIMIT_DIE_ON_UNHANDLED_EXCEPTION

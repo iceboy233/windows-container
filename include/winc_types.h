@@ -11,7 +11,7 @@ namespace winc {
 enum ResultCode {
   WINC_OK = 0,
   WINC_ERROR_SID = 1,
-  WINC_ERROR_TOKEN = 2,
+  WINC_ERROR_LOGON = 2,
   WINC_ERROR_SPAWN = 3,
   WINC_ERROR_DESKTOP = 4,
   WINC_ERROR_JOB_OBJECT = 5,

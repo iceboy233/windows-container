@@ -15,35 +15,21 @@
 namespace winc {
 
 class Logon {
-public:
+protected:
   Logon()
-    : is_sid_cached_(false)
-    {}
-
-  virtual ~Logon() = default;
-  virtual HANDLE GetToken() const = 0;
-  virtual ResultCode GrantAccess(HANDLE object, SE_OBJECT_TYPE object_type,
-                                 DWORD allowed_access) const = 0;
-  ResultCode GetGroupSid(Sid *out_sid) const;
-
-private:
-  ResultCode InitSidCache() const;
-
-private:
-  mutable bool is_sid_cached_;
-  mutable Sid sid_cache_;
-};
-
-class LogonWithOwnedToken : public Logon {
-public:
-  LogonWithOwnedToken()
     : token_(NULL)
+    , is_sid_cached_(false)
     {}
 
-  virtual ~LogonWithOwnedToken() override;
-
-  virtual HANDLE GetToken() const override {
-    return token_;
+public:
+  virtual ~Logon();
+  ResultCode GetGroupSid(Sid **out_sid) const;
+  virtual ResultCode FilterToken(const SID_AND_ATTRIBUTES *sids,
+                                 DWORD sids_count,
+                                 HANDLE *out_token) const;
+  virtual ResultCode GrantAccess(HANDLE object, SE_OBJECT_TYPE object_type,
+                                 DWORD allowed_access) const {
+    return WINC_OK;
   }
 
 protected:
@@ -52,27 +38,45 @@ protected:
   }
 
 private:
-  HANDLE token_;
+  ResultCode InitSidCache() const;
 
 private:
-  LogonWithOwnedToken(const LogonWithOwnedToken &) = delete;
-  void operator=(const LogonWithOwnedToken &) = delete;
+  HANDLE token_;
+  mutable bool is_sid_cached_;
+  mutable Sid sid_cache_;
+
+private:
+  Logon(const Logon &) = delete;
+  void operator=(const Logon &) = delete;
 };
 
-class CurrentLogon : public LogonWithOwnedToken {
-public:
-  ResultCode Init(DWORD access);
-
-  virtual ResultCode GrantAccess(HANDLE object, SE_OBJECT_TYPE object_type,
-                                 DWORD allowed_access) const override {
-    return WINC_OK;
+class LogonWithIntegrity : public Logon {
+protected:
+  LogonWithIntegrity() = default;
+  void Init(DWORD integrity_level) {
+    integrity_level_ = integrity_level;
   }
+
+public:
+  virtual ResultCode FilterToken(const SID_AND_ATTRIBUTES *sids,
+                                 DWORD sids_count,
+                                 HANDLE *out_token) const override;
+  virtual ResultCode GrantAccess(HANDLE object, SE_OBJECT_TYPE object_type,
+                                 DWORD allowed_access) const override;
+private:
+  DWORD integrity_level_;
 };
 
-class UserLogon : public LogonWithOwnedToken {
+class CurrentLogon : public LogonWithIntegrity {
+public:
+  ResultCode Init(DWORD access, DWORD integrity_level);
+};
+
+class UserLogon : public LogonWithIntegrity {
 public:
   ResultCode Init(const std::wstring &username,
-                  const std::wstring &password);
+                  const std::wstring &password,
+                  DWORD integrity_level);
   virtual ResultCode GrantAccess(HANDLE object, SE_OBJECT_TYPE object_type,
                                  DWORD allowed_access) const override;
 };

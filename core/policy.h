@@ -10,12 +10,12 @@
 #include <vector>
 
 #include "core/desktop.h"
-#include "core/sid.h"
 
 namespace winc {
 
 class JobObject;
 class Logon;
+class Sid;
 
 class Policy {
 public:
