@@ -40,6 +40,13 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test_limits", "tests\test_l
 		{E2E27BFD-4837-4265-8F0F-F1A39CA7BCB2} = {E2E27BFD-4837-4265-8F0F-F1A39CA7BCB2}
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "bindings", "bindings", "{0F325599-51C8-46EE-8AE4-D303458D99EE}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "binding_python", "bindings\binding_python\binding_python.vcxproj", "{497E4D3F-EBDB-476F-B03F-C9C5EE9DE141}"
+	ProjectSection(ProjectDependencies) = postProject
+		{E2E27BFD-4837-4265-8F0F-F1A39CA7BCB2} = {E2E27BFD-4837-4265-8F0F-F1A39CA7BCB2}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -86,6 +93,10 @@ Global
 		{37037279-84C7-4540-B383-CF8B1B403429}.Debug|Win32.Build.0 = Debug|Win32
 		{37037279-84C7-4540-B383-CF8B1B403429}.Release|Win32.ActiveCfg = Release|Win32
 		{37037279-84C7-4540-B383-CF8B1B403429}.Release|Win32.Build.0 = Release|Win32
+		{497E4D3F-EBDB-476F-B03F-C9C5EE9DE141}.Debug|Win32.ActiveCfg = Debug|Win32
+		{497E4D3F-EBDB-476F-B03F-C9C5EE9DE141}.Debug|Win32.Build.0 = Debug|Win32
+		{497E4D3F-EBDB-476F-B03F-C9C5EE9DE141}.Release|Win32.ActiveCfg = Release|Win32
+		{497E4D3F-EBDB-476F-B03F-C9C5EE9DE141}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -100,5 +111,6 @@ Global
 		{E4DE5ED7-67C7-419D-8EE3-95F667309B4E} = {ECCD9906-8B0C-445E-A7D7-935253EF1037}
 		{872CBDDD-E803-405E-B973-E0EC93048E0E} = {ECCD9906-8B0C-445E-A7D7-935253EF1037}
 		{37037279-84C7-4540-B383-CF8B1B403429} = {ECCD9906-8B0C-445E-A7D7-935253EF1037}
+		{497E4D3F-EBDB-476F-B03F-C9C5EE9DE141} = {0F325599-51C8-46EE-8AE4-D303458D99EE}
 	EndGlobalSection
 EndGlobal

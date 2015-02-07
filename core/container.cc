@@ -86,7 +86,7 @@ ResultCode Container::Spawn(const wchar_t *exe_path,
     }
     if (options->stdin_handle) {
       si.StartupInfo.dwFlags |= STARTF_USESTDHANDLES;
-      si.StartupInfo.hStdInput  = options->stdin_handle;
+      si.StartupInfo.hStdInput = options->stdin_handle;
       inherit_list[inherit_count++] = options->stdin_handle;
     }
     if (options->stdout_handle) {
@@ -96,7 +96,7 @@ ResultCode Container::Spawn(const wchar_t *exe_path,
     }
     if (options->stdin_handle) {
       si.StartupInfo.dwFlags |= STARTF_USESTDHANDLES;
-      si.StartupInfo.hStdError  = options->stderr_handle;
+      si.StartupInfo.hStdError = options->stderr_handle;
       inherit_list[inherit_count++] = options->stderr_handle;
     }
     if (inherit_count) {
@@ -151,8 +151,8 @@ ResultCode Container::Spawn(const wchar_t *exe_path,
   if (!NT_SUCCESS(status))
     return WINC_ERROR_SPAWN;
 
-  return target->Init(pi.dwProcessId, job_object_holder,
-                      process_holder, thread_holder);
+  return target->Assign(pi.dwProcessId, job_object_holder,
+                        process_holder, thread_holder);
 }
 
 ResultCode Container::CreateDefaultPolicy(Policy **out_policy) {

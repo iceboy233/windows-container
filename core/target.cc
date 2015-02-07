@@ -16,18 +16,36 @@ using std::unique_ptr;
 
 namespace winc {
 
-Target::Target() = default;
-Target::~Target() = default;
+Target::Target()
+  : listen_(false)
+  , listening_(false)
+  {}
 
-ResultCode Target::Init(DWORD process_id,
-                        unique_ptr<JobObject> &job_object,
-                        unique_handle &process_handle,
-                        unique_handle &thread_handle) {
+Target::Target(bool listen)
+  : listen_(listen)
+  , listening_(false)
+  {}
+
+Target::~Target() {
+  if (listening_)
+    JobObject::DeassociateCompletionPort(this);
+}
+
+ResultCode Target::Assign(DWORD process_id,
+                          unique_ptr<JobObject> &job_object,
+                          unique_handle &process_handle,
+                          unique_handle &thread_handle) {
   process_id_ = process_id;
   job_object_ = move(job_object);
   process_handle_ = move(process_handle);
   thread_handle_ = move(thread_handle);
-  return Init();
+  if (listen_) {
+    ResultCode rc = job_object_->AssociateCompletionPort(this);
+    if (rc != WINC_OK)
+      return rc;
+    listening_ = true;
+  }
+  return WINC_OK;
 }
 
 ResultCode Target::Start() {
@@ -93,14 +111,6 @@ ResultCode Target::GetProcessExitCode(DWORD *out_code) {
   if (!::GetExitCodeProcess(process_handle_.get(), out_code))
     return WINC_ERROR_TARGET;
   return WINC_OK;
-}
-
-ResultCode Target::StartListenToEvents() {
-  return job_object_->AssociateCompletionPort(this);
-}
-
-void Target::StopListenToEvents() {
-  JobObject::DeassociateCompletionPort(this);
 }
 
 }

@@ -19,14 +19,15 @@ class JobObject;
 class Target {
 public:
   Target();
+  explicit Target(bool listen);
   virtual ~Target();
 
 private:
   friend class Container;
-  ResultCode Init(DWORD process_id,
-                  std::unique_ptr<JobObject> &job_object,
-                  unique_handle &process_handle,
-                  unique_handle &thread_handle);
+  ResultCode Assign(DWORD process_id,
+                    std::unique_ptr<JobObject> &job_object,
+                    unique_handle &process_handle,
+                    unique_handle &thread_handle);
 
 public:
   DWORD process_id() {
@@ -43,13 +44,6 @@ public:
   ResultCode GetProcessExitCode(DWORD *out_code);
 
 protected:
-  virtual ResultCode Init() {
-    return WINC_OK;
-  }
-
-  ResultCode StartListenToEvents();
-  void StopListenToEvents();
-
   friend class JobObject;
   virtual void OnActiveProcessLimit() {}
   virtual void OnExitAll() {}
@@ -62,6 +56,8 @@ private:
   DWORD process_id_;
   unique_handle process_handle_;
   unique_handle thread_handle_;
+  bool listen_;
+  bool listening_;
 
 private:
   Target(const Target &) = delete;

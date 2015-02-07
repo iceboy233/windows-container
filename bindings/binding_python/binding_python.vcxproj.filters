@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="module.cc" />
+    <ClCompile Include="container.cc" />
+    <ClCompile Include="error.cc" />
+    <ClCompile Include="target.cc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="error.h" />
+    <ClInclude Include="container.h" />
+    <ClInclude Include="target.h" />
+  </ItemGroup>
+</Project>

@@ -15,26 +15,21 @@ using namespace winc;
 class MyTarget : public Target {
 public:
   MyTarget()
-    : my_event_(NULL)
-    , listening_(false)
+    : Target(true)
+    , my_event_(NULL)
     {}
 
   virtual ~MyTarget() override {
-    if (listening_)
-      StopListenToEvents();
     if (my_event_)
       ::CloseHandle(my_event_);
   }
 
-  virtual ResultCode Init() override {
+  ResultCode Init() {
     HANDLE e = ::CreateEventW(NULL, TRUE, FALSE, NULL);
     if (!e)
       return WINC_ERROR_TARGET;
     my_event_ = e;
-    ResultCode rc = StartListenToEvents();
-    if (rc != WINC_OK)
-      return rc;
-    return Target::Init();
+    return WINC_OK;
   }
 
   virtual void OnActiveProcessLimit() override {
@@ -56,7 +51,6 @@ public:
 
 private:
   HANDLE my_event_;
-  bool listening_;
 };
 
 int main() {
@@ -69,9 +63,14 @@ int main() {
 
   Container c;
   MyTarget t;
+  ResultCode rc = t.Init();
+  if (rc != WINC_OK) {
+    fprintf(stderr, "Target error %d\n", rc);
+    exit(1);
+  }
   SpawnOptions o = {};
   o.memory_limit = 10485760;
-  ResultCode rc = c.Spawn(exe_path, &t, &o);
+  rc = c.Spawn(exe_path, &t, &o);
   if (rc != WINC_OK) {
     fprintf(stderr, "Spawn error %d\n", rc);
     exit(1);

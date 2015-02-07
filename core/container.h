@@ -40,13 +40,11 @@ public:
   Container();
   ~Container();
 
-  ResultCode Spawn(const wchar_t *exe_path,
-                   Target *target) {
+  ResultCode Spawn(const wchar_t *exe_path, Target *target) {
     return Spawn(exe_path, target, nullptr);
   }
 
-  ResultCode Spawn(const wchar_t *exe_path,
-                   Target *target,
+  ResultCode Spawn(const wchar_t *exe_path, Target *target,
                    SpawnOptions *options);
 
   static ResultCode CreateDefaultPolicy(Policy **out_policy);
