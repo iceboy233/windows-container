@@ -107,7 +107,8 @@ ResultCode LogonWithIntegrity::GrantAccess(HANDLE object,
                            FIELD_OFFSET(SYSTEM_MANDATORY_LABEL_ACE, SidStart) +
                            sid.GetLength());
   ACL *acl = reinterpret_cast<ACL *>(sacl_buffer.data());
-  if (!::InitializeAcl(acl, sacl_buffer.size(), ACL_REVISION))
+  if (!::InitializeAcl(acl, static_cast<DWORD>(sacl_buffer.size()),
+                       ACL_REVISION))
     return WINC_ERROR_LOGON;
   acl->AceCount = 1;
   SYSTEM_MANDATORY_LABEL_ACE *ace =

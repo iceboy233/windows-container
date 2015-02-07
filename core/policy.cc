@@ -61,7 +61,7 @@ ResultCode Policy::InitRestrictedToken() {
   }
 
   return logon_->FilterToken(sids_to_restrict.data(),
-                             sids_to_restrict.size(),
+                             static_cast<DWORD>(sids_to_restrict.size()),
                              &restricted_token_);
 }
 
