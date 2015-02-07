@@ -22,7 +22,7 @@ int main() {
 
   Container c;
   Target t;
-  ResultCode rc = c.Spawn(exe_path, &t, nullptr, nullptr);
+  ResultCode rc = c.Spawn(exe_path, &t);
   if (rc != WINC_OK) {
     fprintf(stderr, "Spawn error %d\n", rc);
     exit(1);

@@ -71,7 +71,7 @@ int main() {
   MyTarget t;
   SpawnOptions o = {};
   o.memory_limit = 10485760;
-  ResultCode rc = c.Spawn(exe_path, &t, &o, nullptr);
+  ResultCode rc = c.Spawn(exe_path, &t, &o);
   if (rc != WINC_OK) {
     fprintf(stderr, "Spawn error %d\n", rc);
     exit(1);

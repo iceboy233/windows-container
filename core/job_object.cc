@@ -60,6 +60,8 @@ public:
   unordered_set<Target *> attached_target;
 };
 
+namespace {
+
 JobObjectSharedResource *g_shared = nullptr;
 
 ResultCode InitJobObjectSharedResource(JobObjectSharedResource **out_sr) {
@@ -84,6 +86,8 @@ ResultCode InitJobObjectSharedResource(JobObjectSharedResource **out_sr) {
     *out_sr = sr;
   }
   return WINC_OK;
+}
+
 }
 
 JobObject::~JobObject() {

@@ -26,8 +26,7 @@ Container::~Container() = default;
 
 ResultCode Container::Spawn(const wchar_t *exe_path,
                             Target *target,
-                            SpawnOptions *options OPTIONAL,
-                            IoHandles *io_handles OPTIONAL) {
+                            SpawnOptions *options) {
   if (!policy_) {
     Policy *policy;
     ResultCode rc = CreateDefaultPolicy(&policy);
@@ -40,11 +39,27 @@ ResultCode Container::Spawn(const wchar_t *exe_path,
   if (rc != WINC_OK)
     return rc;
 
+  STARTUPINFOEXW si = {};
+  si.StartupInfo.cb = sizeof(si);
+  si.StartupInfo.dwFlags = STARTF_FORCEOFFFEEDBACK;
+  const Desktop &desktop = policy_->desktop();
+  if (!desktop.IsDefaultDesktop()) {
+    const wchar_t *desktop_name;
+    rc = desktop.GetFullName(&desktop_name);
+    if (rc != WINC_OK)
+      return rc;
+    si.StartupInfo.lpDesktop = const_cast<wchar_t *>(desktop_name);
+  }
+
   JobObject *job_object;
   rc = policy_->MakeJobObject(&job_object);
   if (rc != WINC_OK)
     return rc;
   unique_ptr<JobObject> job_object_holder(job_object);
+
+  ProcThreadAttributeList attribute_list;
+  HANDLE inherit_list[3];
+  SIZE_T inherit_count = 0;
   if (options) {
     if (options->processor_affinity ||
         options->memory_limit ||
@@ -69,46 +84,31 @@ ResultCode Container::Spawn(const wchar_t *exe_path,
       if (rc != WINC_OK)
         return rc;
     }
-  }
-
-  STARTUPINFOEXW si = {};
-  si.StartupInfo.cb = sizeof(si);
-  si.StartupInfo.dwFlags = STARTF_FORCEOFFFEEDBACK;
-  const Desktop &desktop = policy_->desktop();
-  if (!desktop.IsDefaultDesktop()) {
-    const wchar_t *desktop_name;
-    rc = desktop.GetFullName(&desktop_name);
-    if (rc != WINC_OK)
-      return rc;
-    si.StartupInfo.lpDesktop = const_cast<wchar_t *>(desktop_name);
-  }
-
-  ProcThreadAttributeList attribute_list;
-  HANDLE inherit_list[3];
-  SIZE_T inherit_count = 0;
-  if (io_handles) {
-    si.StartupInfo.dwFlags   |= STARTF_USESTDHANDLES;
-    si.StartupInfo.hStdInput  = io_handles->stdin_handle;
-    si.StartupInfo.hStdOutput = io_handles->stdout_handle;
-    si.StartupInfo.hStdError  = io_handles->stderr_handle;
-
-    if (io_handles->stdin_handle)
-      inherit_list[inherit_count++] = io_handles->stdin_handle;
-    if (io_handles->stdout_handle)
-      inherit_list[inherit_count++] = io_handles->stdout_handle;
-    if (io_handles->stderr_handle)
-      inherit_list[inherit_count++] = io_handles->stderr_handle;
-  }
-
-  if (inherit_count) {
-    rc = attribute_list.Init(1, 0);
-    if (rc != WINC_OK)
-      return rc;
-    rc = attribute_list.Update(0, PROC_THREAD_ATTRIBUTE_HANDLE_LIST,
-                               inherit_list, inherit_count * sizeof(HANDLE));
-    if (rc != WINC_OK)
-      return rc;
-    si.lpAttributeList = attribute_list.data();
+    if (options->stdin_handle) {
+      si.StartupInfo.dwFlags |= STARTF_USESTDHANDLES;
+      si.StartupInfo.hStdInput  = options->stdin_handle;
+      inherit_list[inherit_count++] = options->stdin_handle;
+    }
+    if (options->stdout_handle) {
+      si.StartupInfo.dwFlags |= STARTF_USESTDHANDLES;
+      si.StartupInfo.hStdOutput = options->stdout_handle;
+      inherit_list[inherit_count++] = options->stdout_handle;
+    }
+    if (options->stdin_handle) {
+      si.StartupInfo.dwFlags |= STARTF_USESTDHANDLES;
+      si.StartupInfo.hStdError  = options->stderr_handle;
+      inherit_list[inherit_count++] = options->stderr_handle;
+    }
+    if (inherit_count) {
+      rc = attribute_list.Init(1, 0);
+      if (rc != WINC_OK)
+        return rc;
+      rc = attribute_list.Update(0, PROC_THREAD_ATTRIBUTE_HANDLE_LIST,
+                                 inherit_list, inherit_count * sizeof(HANDLE));
+      if (rc != WINC_OK)
+        return rc;
+      si.lpAttributeList = attribute_list.data();
+    }
   }
 
   PROCESS_INFORMATION pi;
@@ -169,9 +169,6 @@ ResultCode Container::CreateDefaultPolicy(Policy **out_policy) {
     return rc;
 
   Policy *policy = new Policy(unique_ptr<Logon>(logon.release()));
-  rc = policy->UseAlternateDesktop();
-  if (rc != WINC_OK)
-    return rc;
   policy->RestrictSid(*logon_sid);
   policy->RestrictSid(WinBuiltinUsersSid);
   policy->RestrictSid(WinWorldSid);

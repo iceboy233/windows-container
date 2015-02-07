@@ -9,6 +9,8 @@
 
 using std::vector;
 
+namespace winc {
+
 namespace {
 
 bool AppendNameUserObject(HANDLE user_object, vector<wchar_t> &append) {
@@ -27,8 +29,6 @@ bool AppendNameUserObject(HANDLE user_object, vector<wchar_t> &append) {
 }
 
 }
-
-namespace winc {
 
 ResultCode Desktop::GetFullName(const wchar_t **out_name) const {
   if (full_name_cache_.empty()) {

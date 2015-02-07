@@ -45,11 +45,11 @@ int call_aplusb(Container &c, const wchar_t *exe_path, int a, int b) {
     "r"));
   unique_handle stdout_pipe_holder(stdout_pipe[1]);
 
-  IoHandles io_handles = {};
-  io_handles.stdin_handle = stdin_pipe[0];
-  io_handles.stdout_handle = stdout_pipe[1];
+  SpawnOptions options = {};
+  options.stdin_handle = stdin_pipe[0];
+  options.stdout_handle = stdout_pipe[1];
   Target t;
-  ResultCode rc = c.Spawn(exe_path, &t, nullptr, &io_handles);
+  ResultCode rc = c.Spawn(exe_path, &t, &options);
   if (rc != WINC_OK)
     return -1;
   stdin_pipe_holder.reset();
