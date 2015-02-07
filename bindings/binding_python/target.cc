@@ -20,7 +20,6 @@ PyObject *CreateTargetObject(PyTypeObject *subtype,
   PyObject *obj = subtype->tp_alloc(subtype, 0);
   if (!obj)
     return NULL;
-  PyEval_InitThreads();
   TargetObject *tobj = reinterpret_cast<TargetObject *>(obj);
   new (&tobj->target) TargetDirector;
   return obj;
@@ -57,7 +56,7 @@ PyObject *WaitForProcessTargetObject(PyObject *self, PyObject *args) {
 
 PyObject *GetProcessIdTargetObject(PyObject *self, void *closure) {
   TargetObject *tobj = reinterpret_cast<TargetObject *>(self);
-  return Py_BuildValue("I", tobj->target.process_id());
+  return PyLong_FromUnsignedLong(tobj->target.process_id());
 }
 
 PyObject *GetJobTimeTargetObject(PyObject *self, void *closure) {
@@ -66,7 +65,7 @@ PyObject *GetJobTimeTargetObject(PyObject *self, void *closure) {
   ResultCode rc = tobj->target.GetJobTime(&job_time);
   if (rc != WINC_OK)
     return SetErrorFromResultCode(rc);
-  return Py_BuildValue("K", job_time);
+  return PyLong_FromUnsignedLongLong(job_time);
 }
 
 PyObject *GetProcessTimeTargetObject(PyObject *self, void *closure) {
@@ -75,7 +74,7 @@ PyObject *GetProcessTimeTargetObject(PyObject *self, void *closure) {
   ResultCode rc = tobj->target.GetProcessTime(&process_time);
   if (rc != WINC_OK)
     return SetErrorFromResultCode(rc);
-  return Py_BuildValue("K", process_time);
+  return PyLong_FromUnsignedLongLong(process_time);
 }
 
 PyObject *GetProcessCycleTargetObject(PyObject *self, void *closure) {
@@ -84,7 +83,7 @@ PyObject *GetProcessCycleTargetObject(PyObject *self, void *closure) {
   ResultCode rc = tobj->target.GetProcessCycle(&process_cycle);
   if (rc != WINC_OK)
     return SetErrorFromResultCode(rc);
-  return Py_BuildValue("K", process_cycle);
+  return PyLong_FromUnsignedLongLong(process_cycle);
 }
 
 PyObject *GetJobPeakMemoryTargetObject(PyObject *self, void *closure) {
@@ -93,7 +92,7 @@ PyObject *GetJobPeakMemoryTargetObject(PyObject *self, void *closure) {
   ResultCode rc = tobj->target.GetJobPeakMemory(&job_peak_memory);
   if (rc != WINC_OK)
     return SetErrorFromResultCode(rc);
-  return Py_BuildValue("n", job_peak_memory);
+  return PyLong_FromSize_t(job_peak_memory);
 }
 
 PyObject *GetProcessPeakMemoryTargetObject(PyObject *self, void *closure) {
@@ -102,7 +101,7 @@ PyObject *GetProcessPeakMemoryTargetObject(PyObject *self, void *closure) {
   ResultCode rc = tobj->target.GetJobPeakMemory(&process_peak_memory);
   if (rc != WINC_OK)
     return SetErrorFromResultCode(rc);
-  return Py_BuildValue("n", process_peak_memory);
+  return PyLong_FromSize_t(process_peak_memory);
 }
 
 PyObject *GetProcessExitCodeTargetObject(PyObject *self, void *closure) {
@@ -111,7 +110,7 @@ PyObject *GetProcessExitCodeTargetObject(PyObject *self, void *closure) {
   ResultCode rc = tobj->target.GetProcessExitCode(&exit_code);
   if (rc != WINC_OK)
     return SetErrorFromResultCode(rc);
-  return Py_BuildValue("I", exit_code);
+  return PyLong_FromUnsignedLong(exit_code);
 }
 
 PyTypeObject target_type = {

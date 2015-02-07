@@ -8,6 +8,11 @@ Build Instructions
 
 Use Visual Studio 2013 Update 4.
 
+To build the python binding, set the `PYTHON_INCLUDE` and `PYTHON_LIB`
+environment variable to the `include` and `libs` directory of a python
+installation in your system. The build configuration needs to match the
+python installation (Debug/Release, 32/64bit).
+
 Supported Operating Systems
 ---------------------------
 

@@ -32,6 +32,8 @@ PyMODINIT_FUNC initwinc() {
   PyModule_AddObject(module, "Container", g_container_type);
   Py_INCREF(g_target_type);
   PyModule_AddObject(module, "Target", g_target_type);
+
+  PyEval_InitThreads();
 }
 
 }
