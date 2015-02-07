@@ -17,6 +17,14 @@ public:
   TargetDirector()
     : Target(true)
     {}
+  virtual ~TargetDirector() = default;
+
+protected:
+  virtual void OnActiveProcessLimit() override;
+  virtual void OnExitAll() override;
+  virtual void OnNewProcess(DWORD process_id) override;
+  virtual void OnExitProcess(DWORD process_id) override;
+  virtual void OnMemoryLimit(DWORD process_id) override;
 };
 
 struct TargetObject {
