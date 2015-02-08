@@ -21,38 +21,37 @@ using std::unique_ptr;
 
 namespace winc {
 
-Container::Container() = default;
-Container::~Container() = default;
-
 ResultCode Container::Spawn(const wchar_t *exe_path,
                             Target *target,
                             SpawnOptions *options) {
-  if (!policy_) {
-    Policy *policy;
-    ResultCode rc = CreateDefaultPolicy(&policy);
-    if (rc != WINC_OK)
-      return rc;
-    policy_.reset(policy);
-  }
+  Policy *policy;
+  ResultCode rc = GetPolicy(&policy);
+  if (rc != WINC_OK)
+    return rc;
+
   HANDLE restricted_token;
-  ResultCode rc = policy_->GetRestrictedToken(&restricted_token);
+  rc = policy->GetRestrictedToken(&restricted_token);
   if (rc != WINC_OK)
     return rc;
 
   STARTUPINFOEXW si = {};
   si.StartupInfo.cb = sizeof(si);
   si.StartupInfo.dwFlags = STARTF_FORCEOFFFEEDBACK;
-  const Desktop &desktop = policy_->desktop();
-  if (!desktop.IsDefaultDesktop()) {
+
+  Desktop *desktop;
+  rc = policy->GetDesktop(&desktop);
+  if (rc != WINC_OK)
+    return rc;
+  if (!desktop->IsDefaultDesktop()) {
     const wchar_t *desktop_name;
-    rc = desktop.GetFullName(&desktop_name);
+    rc = desktop->GetFullName(&desktop_name);
     if (rc != WINC_OK)
       return rc;
     si.StartupInfo.lpDesktop = const_cast<wchar_t *>(desktop_name);
   }
 
   JobObject *job_object;
-  rc = policy_->MakeJobObject(&job_object);
+  rc = policy->MakeJobObject(&job_object);
   if (rc != WINC_OK)
     return rc;
   unique_ptr<JobObject> job_object_holder(job_object);
@@ -155,34 +154,41 @@ ResultCode Container::Spawn(const wchar_t *exe_path,
                         process_holder, thread_holder);
 }
 
-ResultCode Container::CreateDefaultPolicy(Policy **out_policy) {
-  auto logon = make_unique<CurrentLogon>();
-  ResultCode rc = logon->Init(TOKEN_QUERY | TOKEN_DUPLICATE |
-                              TOKEN_ADJUST_DEFAULT | TOKEN_ASSIGN_PRIMARY,
-                              SECURITY_MANDATORY_LOW_RID);
-  if (rc != WINC_OK)
-    return rc;
-
-  Sid *logon_sid;
-  rc = logon->GetGroupSid(&logon_sid);
-  if (rc != WINC_OK)
-    return rc;
-
-  Policy *policy = new Policy(unique_ptr<Logon>(logon.release()));
-  policy->RestrictSid(*logon_sid);
-  policy->RestrictSid(WinBuiltinUsersSid);
-  policy->RestrictSid(WinWorldSid);
-  policy->SetJobObjectBasicLimit(JOB_OBJECT_LIMIT_DIE_ON_UNHANDLED_EXCEPTION
-                               | JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE);
-  policy->SetJobObjectUILimit(JOB_OBJECT_UILIMIT_HANDLES
-                            | JOB_OBJECT_UILIMIT_READCLIPBOARD
-                            | JOB_OBJECT_UILIMIT_WRITECLIPBOARD
-                            | JOB_OBJECT_UILIMIT_SYSTEMPARAMETERS
-                            | JOB_OBJECT_UILIMIT_DISPLAYSETTINGS
-                            | JOB_OBJECT_UILIMIT_GLOBALATOMS
-                            | JOB_OBJECT_UILIMIT_DESKTOP
-                            | JOB_OBJECT_UILIMIT_EXITWINDOWS);
-  *out_policy = policy;
+ResultCode Container::GetPolicy(Policy **out_policy) {
+  if (!policy_) {
+    auto policy = make_unique<Policy>();
+    Logon *logon;
+    ResultCode rc = policy->GetLogon(&logon);
+    if (rc != WINC_OK)
+      return rc;
+    Sid *logon_sid;
+    rc = logon->GetGroupSid(&logon_sid);
+    if (rc != WINC_OK)
+      return rc;
+    policy->AddRestrictSid(*logon_sid);
+    Sid builtin_user_sid;
+    rc = builtin_user_sid.Init(WinBuiltinUsersSid);
+    if (rc != WINC_OK)
+      return rc;
+    policy->AddRestrictSid(builtin_user_sid);
+    Sid world_sid;
+    rc = world_sid.Init(WinWorldSid);
+    if (rc != WINC_OK)
+      return rc;
+    policy->AddRestrictSid(world_sid);
+    policy->set_job_basic_limit(JOB_OBJECT_LIMIT_DIE_ON_UNHANDLED_EXCEPTION
+                              | JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE);
+    policy->set_job_ui_limit(JOB_OBJECT_UILIMIT_HANDLES
+                           | JOB_OBJECT_UILIMIT_READCLIPBOARD
+                           | JOB_OBJECT_UILIMIT_WRITECLIPBOARD
+                           | JOB_OBJECT_UILIMIT_SYSTEMPARAMETERS
+                           | JOB_OBJECT_UILIMIT_DISPLAYSETTINGS
+                           | JOB_OBJECT_UILIMIT_GLOBALATOMS
+                           | JOB_OBJECT_UILIMIT_DESKTOP
+                           | JOB_OBJECT_UILIMIT_EXITWINDOWS);
+    policy_ = move(policy);
+  }
+  *out_policy = policy_.get();
   return WINC_OK;
 }
 

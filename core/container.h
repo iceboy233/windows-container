@@ -9,10 +9,10 @@
 #include <memory>
 
 #include <winc_types.h>
+#include "core/policy.h"
 
 namespace winc {
 
-class Policy;
 class Target;
 
 // The options in this structure are all optional
@@ -37,9 +37,6 @@ struct SpawnOptions {
 
 class Container {
 public:
-  Container();
-  ~Container();
-
   ResultCode Spawn(const wchar_t *exe_path, Target *target) {
     return Spawn(exe_path, target, nullptr);
   }
@@ -47,16 +44,11 @@ public:
   ResultCode Spawn(const wchar_t *exe_path, Target *target,
                    SpawnOptions *options);
 
-  static ResultCode CreateDefaultPolicy(Policy **out_policy);
-  const Policy *policy();
-  void set_policy(std::unique_ptr<Policy> &policy);
+  // Returns a borrow reference of the mutable policy
+  ResultCode GetPolicy(Policy **out_policy);
 
 private:
   std::unique_ptr<Policy> policy_;
-
-private:
-  Container(const Container &) = delete;
-  void operator=(const Container &) = delete;
 };
 
 }

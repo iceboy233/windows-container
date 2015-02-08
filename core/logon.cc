@@ -13,11 +13,6 @@ using namespace std;
 
 namespace winc {
 
-Logon::~Logon() {
-  if (token_ != NULL)
-    ::CloseHandle(token_);
-}
-
 ResultCode Logon::GetGroupSid(Sid **out_sid) const {
   if (!is_sid_cached_) {
     ResultCode rc = InitSidCache();
@@ -33,10 +28,10 @@ ResultCode Logon::FilterToken(const SID_AND_ATTRIBUTES *sids,
                               DWORD sids_count,
                               HANDLE *out_token) const {
   HANDLE new_token;
-  if (!::CreateRestrictedToken(token_,
-    DISABLE_MAX_PRIVILEGE, 0, NULL, 0, NULL,
-    sids_count, const_cast<SID_AND_ATTRIBUTES *>(sids),
-    &new_token))
+  if (!::CreateRestrictedToken(token_.get(), DISABLE_MAX_PRIVILEGE,
+                               0, NULL, 0, NULL, sids_count,
+                               const_cast<SID_AND_ATTRIBUTES *>(sids),
+                               &new_token))
     return WINC_ERROR_LOGON;
   *out_token = new_token;
   return WINC_OK;
@@ -44,14 +39,14 @@ ResultCode Logon::FilterToken(const SID_AND_ATTRIBUTES *sids,
 
 ResultCode Logon::InitSidCache() const {
   DWORD size;
-  if (!::GetTokenInformation(token_, TokenGroups, NULL, 0, &size) &&
+  if (!::GetTokenInformation(token_.get(), TokenGroups, NULL, 0, &size) &&
       ::GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
     return WINC_ERROR_LOGON;
   }
 
   vector<BYTE> buffer(size);
   TOKEN_GROUPS *info = reinterpret_cast<TOKEN_GROUPS *>(buffer.data());
-  if (::GetTokenInformation(token_, TokenGroups, info, size, &size)) {
+  if (::GetTokenInformation(token_.get(), TokenGroups, info, size, &size)) {
     for (unsigned int i = 0; i < info->GroupCount; ++i) {
       if (info->Groups[i].Attributes & SE_GROUP_LOGON_ID) {
         sid_cache_.Init(info->Groups[i].Sid);

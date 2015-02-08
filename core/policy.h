@@ -10,53 +10,70 @@
 #include <vector>
 
 #include "core/desktop.h"
+#include "core/logon.h"
+#include "core/util.h"
 
 namespace winc {
 
+class Container;
 class JobObject;
-class Logon;
 class Sid;
 
 class Policy {
 public:
-  explicit Policy(std::unique_ptr<Logon> &logon)
-    : restricted_token_(NULL)
-    , desktop_(new DefaultDesktop)
-    , job_object_basic_limit_(0)
-    , job_object_ui_limit_(0)
-    , logon_(move(logon))
+  Policy()
+    : use_desktop_(false)
+    , job_basic_limit_(0)
+    , job_ui_limit_(0)
     {}
 
-  ~Policy();
+public:
+  ResultCode GetLogon(Logon **out_logon);
+  void SetLogon(std::unique_ptr<Logon> &logon);
+  void AddRestrictSid(const Sid &sid);
+  void RemoveRestrictSid(const Sid &sid);
 
-  ResultCode UseAlternateDesktop();
-  const Desktop &desktop() const {
-    return *desktop_.get();
+public:
+  bool use_desktop() {
+    return use_desktop_;
   }
 
-  ResultCode RestrictSid(WELL_KNOWN_SID_TYPE type);
-  void RestrictSid(const Sid &sid);
-
-  void SetJobObjectBasicLimit(DWORD basic_limit) {
-    job_object_basic_limit_ |= basic_limit;
+  void set_use_desktop(bool use) {
+    use_desktop_ = use;
   }
 
-  void SetJobObjectUILimit(DWORD ui_limit) {
-    job_object_ui_limit_ |= ui_limit;
+  DWORD job_basic_limit() {
+    return job_basic_limit_;
   }
 
+  void set_job_basic_limit(DWORD basic_limit) {
+    job_basic_limit_ = basic_limit;
+  }
+
+  DWORD job_ui_limit() {
+    return job_ui_limit_;
+  }
+
+  void set_job_ui_limit(DWORD ui_limit) {
+    job_ui_limit_ = ui_limit;
+  }
+
+private:
+  friend class Container;
+  // Get a restricted token, returns borrow reference
   ResultCode GetRestrictedToken(HANDLE *out_token);
+  // Get a desktop, returns borrow reference
+  ResultCode GetDesktop(Desktop **out_desktop);
+  // Make a job object, returns new reference
   ResultCode MakeJobObject(JobObject **out_job);
 
 private:
-  ResultCode InitRestrictedToken();
-  ResultCode InitDesktop();
-
-private:
-  HANDLE restricted_token_;
-  std::unique_ptr<Desktop> desktop_;
-  DWORD job_object_basic_limit_;
-  DWORD job_object_ui_limit_;
+  unique_handle restricted_token_;
+  bool use_desktop_;
+  DWORD job_basic_limit_;
+  DWORD job_ui_limit_;
+  std::unique_ptr<DefaultDesktop> default_desktop_;
+  std::unique_ptr<AlternateDesktop> alternate_desktop_;
   std::unique_ptr<Logon> logon_;
   std::vector<Sid> restricted_sids_;
 };

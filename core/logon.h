@@ -11,18 +11,18 @@
 
 #include <winc_types.h>
 #include "core/sid.h"
+#include "core/util.h"
 
 namespace winc {
 
 class Logon {
 protected:
   Logon()
-    : token_(NULL)
-    , is_sid_cached_(false)
+    : is_sid_cached_(false)
     {}
 
 public:
-  virtual ~Logon();
+  virtual ~Logon() {}
   ResultCode GetGroupSid(Sid **out_sid) const;
   virtual ResultCode FilterToken(const SID_AND_ATTRIBUTES *sids,
                                  DWORD sids_count,
@@ -34,14 +34,14 @@ public:
 
 protected:
   void set_token(HANDLE token) {
-    token_ = token;
+    token_.reset(token);
   }
 
 private:
   ResultCode InitSidCache() const;
 
 private:
-  HANDLE token_;
+  unique_handle token_;
   mutable bool is_sid_cached_;
   mutable Sid sid_cache_;
 

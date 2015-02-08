@@ -52,12 +52,12 @@ protected:
   virtual void OnMemoryLimit(DWORD process_id) {}
 
 private:
-  std::unique_ptr<JobObject> job_object_;
-  DWORD process_id_;
-  unique_handle process_handle_;
-  unique_handle thread_handle_;
   bool listen_;
   bool listening_;
+  DWORD process_id_;
+  std::unique_ptr<JobObject> job_object_;
+  unique_handle process_handle_;
+  unique_handle thread_handle_;
 
 private:
   Target(const Target &) = delete;
