@@ -5,10 +5,12 @@
     <ClCompile Include="container.cc" />
     <ClCompile Include="error.cc" />
     <ClCompile Include="target.cc" />
+    <ClCompile Include="policy.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="error.h" />
     <ClInclude Include="container.h" />
     <ClInclude Include="target.h" />
+    <ClInclude Include="policy.h" />
   </ItemGroup>
 </Project>

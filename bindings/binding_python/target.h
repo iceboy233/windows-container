@@ -12,6 +12,8 @@ namespace winc {
 
 namespace python {
 
+struct ContainerObject;
+
 class TargetDirector : public Target {
 public:
   TargetDirector()
@@ -30,6 +32,8 @@ protected:
 struct TargetObject {
   PyObject_HEAD
   TargetDirector target;
+  // Reference to the container object
+  ContainerObject *container_object;
 };
 
 int InitTargetType();

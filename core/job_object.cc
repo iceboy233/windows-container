@@ -28,8 +28,7 @@ public:
   }
 
   ResultCode Init() {
-    HANDLE port = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE,
-                                           NULL, 0, 1);
+    HANDLE port = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 1);
     if (!port)
       return WINC_ERROR_COMPLETION_PORT;
     completion_port = port;
@@ -90,62 +89,64 @@ ResultCode InitJobObjectSharedResource(JobObjectSharedResource **out_sr) {
 
 }
 
-JobObject::~JobObject() {
-  if (job_)
-    ::CloseHandle(job_);
-}
-
 ResultCode JobObject::Init() {
   HANDLE job = ::CreateJobObjectW(NULL, NULL);
   if (!job)
     return WINC_ERROR_JOB_OBJECT;
-  job_ = job;
+  job_.reset(job);
   return WINC_OK;
 }
 
 ResultCode JobObject::AssignProcess(HANDLE process) {
-  if (!::AssignProcessToJobObject(job_, process))
+  if (!::AssignProcessToJobObject(job_.get(), process))
     return WINC_ERROR_JOB_OBJECT;
   return WINC_OK;
 }
 
 ResultCode JobObject::GetBasicLimit(JOBOBJECT_EXTENDED_LIMIT_INFORMATION *limit) {
-  if (!::QueryInformationJobObject(job_, JobObjectExtendedLimitInformation,
-      limit, sizeof(JOBOBJECT_EXTENDED_LIMIT_INFORMATION), NULL))
+  if (!::QueryInformationJobObject(job_.get(),
+                                   JobObjectExtendedLimitInformation,
+                                   limit,
+                                   sizeof(JOBOBJECT_EXTENDED_LIMIT_INFORMATION),
+                                   NULL))
     return WINC_ERROR_JOB_OBJECT;
   return WINC_OK;
 }
 
-ResultCode JobObject::SetBasicLimit(
-    const JOBOBJECT_EXTENDED_LIMIT_INFORMATION &limit) {
-  if (!::SetInformationJobObject(job_, JobObjectExtendedLimitInformation,
-      const_cast<JOBOBJECT_EXTENDED_LIMIT_INFORMATION *>(&limit),
-      sizeof(JOBOBJECT_EXTENDED_LIMIT_INFORMATION)))
+ResultCode JobObject::SetBasicLimit(const JOBOBJECT_EXTENDED_LIMIT_INFORMATION &limit) {
+  if (!::SetInformationJobObject(job_.get(),
+                                 JobObjectExtendedLimitInformation,
+                                 const_cast<JOBOBJECT_EXTENDED_LIMIT_INFORMATION *>(&limit),
+                                 sizeof(JOBOBJECT_EXTENDED_LIMIT_INFORMATION)))
     return WINC_ERROR_JOB_OBJECT;
   return WINC_OK;
 }
 
 ResultCode JobObject::GetUILimit(JOBOBJECT_BASIC_UI_RESTRICTIONS *limit) {
-  if (!::QueryInformationJobObject(job_, JobObjectBasicUIRestrictions,
-      limit, sizeof(JOBOBJECT_BASIC_UI_RESTRICTIONS), NULL))
+  if (!::QueryInformationJobObject(job_.get(),
+                                   JobObjectBasicUIRestrictions,
+                                   limit,
+                                   sizeof(JOBOBJECT_BASIC_UI_RESTRICTIONS),
+                                   NULL))
     return WINC_ERROR_JOB_OBJECT;
   return WINC_OK;
 }
 
 
-ResultCode JobObject::SetUILimit(
-    const JOBOBJECT_BASIC_UI_RESTRICTIONS &ui_limit) {
-  if (!::SetInformationJobObject(job_, JobObjectBasicUIRestrictions,
+ResultCode JobObject::SetUILimit(const JOBOBJECT_BASIC_UI_RESTRICTIONS &ui_limit) {
+  if (!::SetInformationJobObject(job_.get(), JobObjectBasicUIRestrictions,
       const_cast<JOBOBJECT_BASIC_UI_RESTRICTIONS *>(&ui_limit),
       sizeof(JOBOBJECT_BASIC_UI_RESTRICTIONS)))
     return WINC_ERROR_JOB_OBJECT;
   return WINC_OK;
 }
 
-ResultCode JobObject::GetAccountInfo(
-    JOBOBJECT_BASIC_ACCOUNTING_INFORMATION *info) {
-  if (!::QueryInformationJobObject(job_, JobObjectBasicAccountingInformation,
-      info, sizeof(JOBOBJECT_BASIC_ACCOUNTING_INFORMATION), NULL))
+ResultCode JobObject::GetAccountInfo(JOBOBJECT_BASIC_ACCOUNTING_INFORMATION *info) {
+  if (!::QueryInformationJobObject(job_.get(),
+                                   JobObjectBasicAccountingInformation,
+                                   info,
+                                   sizeof(JOBOBJECT_BASIC_ACCOUNTING_INFORMATION),
+                                   NULL))
     return WINC_ERROR_JOB_OBJECT;
   return WINC_OK;
 }
@@ -166,7 +167,7 @@ ResultCode JobObject::AssociateCompletionPort(Target *target) {
   JOBOBJECT_ASSOCIATE_COMPLETION_PORT port;
   port.CompletionKey = target;
   port.CompletionPort = sr->completion_port;
-  if (!::SetInformationJobObject(job_,
+  if (!::SetInformationJobObject(job_.get(),
                                  JobObjectAssociateCompletionPortInformation,
                                  &port, sizeof(port)))
     return WINC_ERROR_JOB_OBJECT;

@@ -8,6 +8,7 @@
 #include <Windows.h>
 
 #include <winc_types.h>
+#include "core/util.h"
 
 namespace winc {
 
@@ -16,11 +17,6 @@ class Target;
 
 class JobObject {
 public:
-  JobObject()
-    : job_(NULL)
-    {}
-
-  ~JobObject();
   ResultCode Init();
   ResultCode AssignProcess(HANDLE process);
   ResultCode GetBasicLimit(JOBOBJECT_EXTENDED_LIMIT_INFORMATION *limit);
@@ -39,7 +35,7 @@ private:
   static void DeassociateCompletionPort(Target *target);
 
 private:
-  HANDLE job_;
+  unique_handle job_;
 };
 
 }

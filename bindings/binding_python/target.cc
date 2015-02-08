@@ -20,8 +20,11 @@ PyObject *CreateTargetObject(PyTypeObject *subtype,
   PyObject *obj = subtype->tp_alloc(subtype, 0);
   if (!obj)
     return NULL;
+  // Target director may initate callback in its worker thread
+  PyEval_InitThreads();
   TargetObject *tobj = reinterpret_cast<TargetObject *>(obj);
   new (&tobj->target) TargetDirector;
+  tobj->container_object = NULL;
   return obj;
 }
 
@@ -30,6 +33,7 @@ void DeleteTargetObject(PyObject *self) {
   Py_BEGIN_ALLOW_THREADS
   tobj->target.~TargetDirector();
   Py_END_ALLOW_THREADS
+  Py_XDECREF(tobj->container_object);
   Py_TYPE(self)->tp_free(self);
 }
 
@@ -123,7 +127,7 @@ PyTypeObject target_type = {
 PyMethodDef target_methods[] = {
   {"start",            StartTargetObject,          METH_NOARGS},
   {"wait_for_process", WaitForProcessTargetObject, METH_NOARGS},
-  {NULL, NULL}
+  {NULL}
 };
 
 PyGetSetDef target_getset[] = {

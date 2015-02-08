@@ -10,6 +10,7 @@
 #include "core/util.h"
 #include "bindings/binding_python/error.h"
 #include "bindings/binding_python/target.h"
+#include "bindings/binding_python/policy.h"
 
 namespace winc {
 
@@ -77,6 +78,13 @@ PyObject *SpawnContainerObject(PyObject *self,
     if (!target)
       return NULL;
   }
+  TargetObject *tobj = reinterpret_cast<TargetObject *>(target);
+  if (tobj->container_object) {
+    Py_DECREF(target);
+    PyErr_SetString(g_error_class, "target already in use");
+    return NULL;
+  }
+  ContainerObject *cobj = reinterpret_cast<ContainerObject *>(self);
   ResultCode rc;
   Py_BEGIN_ALLOW_THREADS
   unique_handle stdin_holder, stdout_holder, stderr_holder;
@@ -84,15 +92,21 @@ PyObject *SpawnContainerObject(PyObject *self,
   options.stdin_handle = GetInheritableHandle(stdin_handle, &stdin_holder);
   options.stdout_handle = GetInheritableHandle(stdout_handle, &stdout_holder);
   options.stderr_handle = GetInheritableHandle(stderr_handle, &stderr_holder);
-  ContainerObject *cobj = reinterpret_cast<ContainerObject *>(self);
-  TargetObject *tobj = reinterpret_cast<TargetObject *>(target);
   rc = cobj->container.Spawn(exe_path, &tobj->target, &options);
   Py_END_ALLOW_THREADS
   if (rc != WINC_OK) {
     Py_DECREF(target);
     return SetErrorFromResultCode(rc);
   }
+  // The lifecycle of the container must be longer than the target,
+  // so we keep an implicit reference here
+  Py_INCREF(cobj);
+  tobj->container_object = cobj;
   return target;
+}
+
+PyObject *GetPolicyContainerObject(PyObject *self, void *closure) {
+  return PyObject_CallFunctionObjArgs(g_policy_type, self, NULL);
 }
 
 PyTypeObject container_type = {
@@ -103,9 +117,15 @@ PyTypeObject container_type = {
 };
 
 PyMethodDef container_methods[] = {
-  {"spawn", reinterpret_cast<PyCFunction>(SpawnContainerObject),
-    METH_VARARGS | METH_KEYWORDS},
-  {NULL, NULL}
+  {"spawn",
+   reinterpret_cast<PyCFunction>(SpawnContainerObject),
+   METH_VARARGS | METH_KEYWORDS},
+  {NULL}
+};
+
+PyGetSetDef container_getset[] = {
+  {"policy", GetPolicyContainerObject, NULL},
+  {NULL}
 };
 
 }
@@ -115,6 +135,7 @@ PyObject *g_container_type;
 int InitContainerType() {
   container_type.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
   container_type.tp_methods = container_methods;
+  container_type.tp_getset = container_getset;
   container_type.tp_new = CreateContainerObject;
   container_type.tp_dealloc = DeleteContainerObject;
   if (PyType_Ready(&container_type) < 0)

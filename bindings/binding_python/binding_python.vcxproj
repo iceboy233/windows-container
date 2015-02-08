@@ -168,11 +168,13 @@
     <ClCompile Include="container.cc" />
     <ClCompile Include="error.cc" />
     <ClCompile Include="module.cc" />
+    <ClCompile Include="policy.cc" />
     <ClCompile Include="target.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="container.h" />
     <ClInclude Include="error.h" />
+    <ClInclude Include="policy.h" />
     <ClInclude Include="target.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

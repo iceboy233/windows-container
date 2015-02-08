@@ -22,7 +22,37 @@ int InitErrorClass() {
 }
 
 PyObject *SetErrorFromResultCode(ResultCode rc) {
-  return PyErr_Format(g_error_class, "Winc error %d", rc);
+  const char *desc = "unknown error";
+  switch (rc) {
+  case WINC_ERROR_SID:
+    desc = "SID error";
+    break;
+  case WINC_ERROR_LOGON:
+    desc = "logon error";
+    break;
+  case WINC_ERROR_SPAWN:
+    desc = "spawn error";
+    break;
+  case WINC_ERROR_DESKTOP:
+    desc = "desktop error";
+    break;
+  case WINC_ERROR_JOB_OBJECT:
+    desc = "job object error";
+    break;
+  case WINC_ERROR_TARGET:
+    desc = "target error";
+    break;
+  case WINC_ERROR_UTIL:
+    desc = "util error";
+    break;
+  case WINC_ERROR_COMPLETION_PORT:
+    desc = "completion port error";
+    break;
+  case WINC_PRIVILEGE_NOT_HELD:
+    desc = "privilege not held";
+    break;
+  }
+  return PyErr_Format(g_error_class, "%s (%d)", desc, rc);
 }
 
 }
