@@ -96,7 +96,11 @@ int SetJobBasicLimitPolicyObject(PyObject *self,
     PyErr_SetString(PyExc_RuntimeError, "not initialized");
     return -1;
   }
+#if PY_MAJOR_VERSION >= 3
+  if (!PyLong_Check(value)) {
+#else
   if (!PyInt_Check(value) && !PyLong_Check(value)) {
+#endif
     PyErr_SetString(PyExc_TypeError, "integer expected");
     return -1;
   }
@@ -123,7 +127,11 @@ int SetJobUILimitPolicyObject(PyObject *self,
     PyErr_SetString(PyExc_RuntimeError, "not initialized");
     return -1;
   }
+#if PY_MAJOR_VERSION >= 3
+  if (!PyLong_Check(value)) {
+#else
   if (!PyInt_Check(value) && !PyLong_Check(value)) {
+#endif
     PyErr_SetString(PyExc_TypeError, "integer expected");
     return -1;
   }
@@ -135,8 +143,7 @@ int SetJobUILimitPolicyObject(PyObject *self,
 }
 
 PyTypeObject policy_type = {
-  PyObject_HEAD_INIT(&PyType_Type)
-  0,                    // ob_size
+  PyVarObject_HEAD_INIT(&PyType_Type, 0)
   "winc.Policy",        // tp_name
   sizeof(PolicyObject), // tp_basicsize
 };

@@ -37,19 +37,31 @@ void DeleteContainerObject(PyObject *self) {
 HANDLE GetInheritableHandle(PyObject *handle, unique_handle *out_holder) {
   if (!handle)
     return NULL;
+#if PY_MAJOR_VERSION >= 3
+  if (!PyLong_Check(handle)) {
+#else
+  if (!PyInt_Check(handle) && !PyLong_Check(handle)) {
+#endif
+    PyErr_SetString(PyExc_TypeError, "integer expected");
+    return NULL;
+  }
   HANDLE object = PyLong_AsVoidPtr(handle);
-  if (!object)
+  if (!object && PyErr_Occurred())
     return NULL;
   DWORD flags;
-  if (!::GetHandleInformation(object, &flags))
+  if (!::GetHandleInformation(object, &flags)) {
+    PyErr_SetExcFromWindowsErr(PyExc_WindowsError, ::GetLastError());
     return NULL;
+  }
   if (flags & HANDLE_FLAG_INHERIT)
     return object;
   HANDLE object_dup;
   if (!::DuplicateHandle(::GetCurrentProcess(), object,
                          ::GetCurrentProcess(), &object_dup,
-                         0, TRUE, DUPLICATE_SAME_ACCESS))
+                         0, TRUE, DUPLICATE_SAME_ACCESS)) {
+    PyErr_SetExcFromWindowsErr(PyExc_WindowsError, ::GetLastError());
     return NULL;
+  }
   out_holder->reset(object_dup);
   return object_dup;
 }
@@ -84,14 +96,26 @@ PyObject *SpawnContainerObject(PyObject *self,
     PyErr_SetString(g_error_class, "target already in use");
     return NULL;
   }
-  ContainerObject *cobj = reinterpret_cast<ContainerObject *>(self);
-  ResultCode rc;
-  Py_BEGIN_ALLOW_THREADS
   unique_handle stdin_holder, stdout_holder, stderr_holder;
   SpawnOptions options = {};
   options.stdin_handle = GetInheritableHandle(stdin_handle, &stdin_holder);
+  if (!options.stdin_handle && PyErr_Occurred()) {
+    Py_DECREF(target);
+    return NULL;
+  }
   options.stdout_handle = GetInheritableHandle(stdout_handle, &stdout_holder);
+  if (!options.stdout_handle && PyErr_Occurred()) {
+    Py_DECREF(target);
+    return NULL;
+  }
   options.stderr_handle = GetInheritableHandle(stderr_handle, &stderr_holder);
+  if (!options.stderr_handle && PyErr_Occurred()) {
+    Py_DECREF(target);
+    return NULL;
+  }
+  ContainerObject *cobj = reinterpret_cast<ContainerObject *>(self);
+  ResultCode rc;
+  Py_BEGIN_ALLOW_THREADS
   rc = cobj->container.Spawn(exe_path, &tobj->target, &options);
   Py_END_ALLOW_THREADS
   if (rc != WINC_OK) {
@@ -110,8 +134,7 @@ PyObject *GetPolicyContainerObject(PyObject *self, void *closure) {
 }
 
 PyTypeObject container_type = {
-  PyObject_HEAD_INIT(&PyType_Type)
-  0,                        // ob_size
+  PyVarObject_HEAD_INIT(&PyType_Type, 0)
   "winc.Container",         // tp_name
   sizeof(ContainerObject),  // tp_basicsize
 };

@@ -118,8 +118,7 @@ PyObject *GetProcessExitCodeTargetObject(PyObject *self, void *closure) {
 }
 
 PyTypeObject target_type = {
-  PyObject_HEAD_INIT(&PyType_Type)
-  0,                    // ob_size
+  PyVarObject_HEAD_INIT(&PyType_Type, 0)
   "winc.Target",        // tp_name
   sizeof(TargetObject), // tp_basicsize
 };
@@ -146,40 +145,45 @@ PyGetSetDef target_getset[] = {
 void TargetDirector::OnActiveProcessLimit() {
   TargetObject *tobj = CONTAINING_RECORD(this, TargetObject, target);
   PyGILState_STATE gstate = PyGILState_Ensure();
-  PyObject_CallMethod(reinterpret_cast<PyObject *>(tobj),
-                      "on_active_process_limit", NULL);
+  if (!PyObject_CallMethod(reinterpret_cast<PyObject *>(tobj),
+                           "on_active_process_limit", NULL))
+    PyErr_Clear();
   PyGILState_Release(gstate);
 }
 
 void TargetDirector::OnExitAll() {
   TargetObject *tobj = CONTAINING_RECORD(this, TargetObject, target);
   PyGILState_STATE gstate = PyGILState_Ensure();
-  PyObject_CallMethod(reinterpret_cast<PyObject *>(tobj),
-                      "on_exit_all", NULL);
+  if (!PyObject_CallMethod(reinterpret_cast<PyObject *>(tobj),
+                           "on_exit_all", NULL))
+    PyErr_Clear();
   PyGILState_Release(gstate);
 }
 
 void TargetDirector::OnNewProcess(DWORD process_id) {
   TargetObject *tobj = CONTAINING_RECORD(this, TargetObject, target);
   PyGILState_STATE gstate = PyGILState_Ensure();
-  PyObject_CallMethod(reinterpret_cast<PyObject *>(tobj),
-                      "on_new_process", "I", process_id);
+  if (!PyObject_CallMethod(reinterpret_cast<PyObject *>(tobj),
+                           "on_new_process", "I", process_id))
+    PyErr_Clear();
   PyGILState_Release(gstate);
 }
 
 void TargetDirector::OnExitProcess(DWORD process_id) {
   TargetObject *tobj = CONTAINING_RECORD(this, TargetObject, target);
   PyGILState_STATE gstate = PyGILState_Ensure();
-  PyObject_CallMethod(reinterpret_cast<PyObject *>(tobj),
-                      "on_exit_process", "I", process_id);
+  if (!PyObject_CallMethod(reinterpret_cast<PyObject *>(tobj),
+                           "on_exit_process", "I", process_id))
+    PyErr_Clear();
   PyGILState_Release(gstate);
 }
 
 void TargetDirector::OnMemoryLimit(DWORD process_id) {
   TargetObject *tobj = CONTAINING_RECORD(this, TargetObject, target);
   PyGILState_STATE gstate = PyGILState_Ensure();
-  PyObject_CallMethod(reinterpret_cast<PyObject *>(tobj),
-                      "on_memory_limit", "I", process_id);
+  if (!PyObject_CallMethod(reinterpret_cast<PyObject *>(tobj),
+                           "on_memory_limit", "I", process_id))
+    PyErr_Clear();
   PyGILState_Release(gstate);
 }
 
