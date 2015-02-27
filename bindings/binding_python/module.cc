@@ -3,12 +3,14 @@
 // found in the LICENSE file.
 
 #include <Python.h>
+#include <Windows.h>
 
 #include "bindings/binding_python/error.h"
 #include "bindings/binding_python/container.h"
 #include "bindings/binding_python/target.h"
 #include "bindings/binding_python/policy.h"
 #include "bindings/binding_python/logon.h"
+#include "bindings/binding_python/sid.h"
 
 using namespace winc::python;
 
@@ -35,6 +37,7 @@ PyMODINIT_FUNC initwinc() {
   InitTargetType();
   InitPolicyType();
   InitLogonTypes();
+  InitSidType();
 
 #if PY_MAJOR_VERSION >= 3
   PyObject *module = PyModule_Create(&winc_module);
@@ -61,6 +64,16 @@ PyMODINIT_FUNC initwinc() {
   Py_INCREF(&g_user_logon_type);
   PyModule_AddObject(module, "UserLogon",
                      reinterpret_cast<PyObject *>(&g_user_logon_type));
+  Py_INCREF(&g_sid_type);
+  PyModule_AddObject(module, "Sid",
+                     reinterpret_cast<PyObject *>(&g_sid_type));
+
+  PyModule_AddObject(module, "LOW_INTEGRITY_LEVEL",
+                     PyLong_FromUnsignedLong(SECURITY_MANDATORY_LOW_RID));
+  PyModule_AddObject(module, "MEDIUM_INTEGRITY_LEVEL",
+                     PyLong_FromUnsignedLong(SECURITY_MANDATORY_MEDIUM_RID));
+  PyModule_AddObject(module, "HIGH_INTEGRITY_LEVEL",
+                     PyLong_FromUnsignedLong(SECURITY_MANDATORY_HIGH_RID));
 
 #if PY_MAJOR_VERSION >= 3
   return module;

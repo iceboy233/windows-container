@@ -170,6 +170,7 @@
     <ClCompile Include="logon.cc" />
     <ClCompile Include="module.cc" />
     <ClCompile Include="policy.cc" />
+    <ClCompile Include="sid.cc" />
     <ClCompile Include="target.cc" />
   </ItemGroup>
   <ItemGroup>
@@ -177,6 +178,7 @@
     <ClInclude Include="error.h" />
     <ClInclude Include="logon.h" />
     <ClInclude Include="policy.h" />
+    <ClInclude Include="sid.h" />
     <ClInclude Include="target.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

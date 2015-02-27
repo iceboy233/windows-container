@@ -7,6 +7,7 @@
     <ClCompile Include="target.cc" />
     <ClCompile Include="policy.cc" />
     <ClCompile Include="logon.cc" />
+    <ClCompile Include="sid.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="error.h" />
@@ -14,5 +15,6 @@
     <ClInclude Include="target.h" />
     <ClInclude Include="policy.h" />
     <ClInclude Include="logon.h" />
+    <ClInclude Include="sid.h" />
   </ItemGroup>
 </Project>

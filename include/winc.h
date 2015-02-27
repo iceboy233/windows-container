@@ -8,6 +8,9 @@
 #include <winc_types.h>
 
 #include "core/container.h"
+#include "core/policy.h"
 #include "core/target.h"
+#include "core/logon.h"
+#include "core/sid.h"
 
 #endif
