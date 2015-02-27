@@ -58,6 +58,9 @@ PyMODINIT_FUNC initwinc() {
   Py_INCREF(&g_current_logon_type);
   PyModule_AddObject(module, "CurrentLogon",
                      reinterpret_cast<PyObject *>(&g_current_logon_type));
+  Py_INCREF(&g_user_logon_type);
+  PyModule_AddObject(module, "UserLogon",
+                     reinterpret_cast<PyObject *>(&g_user_logon_type));
 
 #if PY_MAJOR_VERSION >= 3
   return module;

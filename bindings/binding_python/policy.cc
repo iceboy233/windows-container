@@ -8,6 +8,7 @@
 
 #include "bindings/binding_python/container.h"
 #include "bindings/binding_python/error.h"
+#include "bindings/binding_python/logon.h"
 
 namespace winc {
 
@@ -37,7 +38,7 @@ int InitPolicyObject(PyObject *self, PyObject *args, PyObject *kwds) {
   static char *kwlist[] = {"container", NULL};
   PyObject *container;
   if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!", kwlist,
-                                   g_container_type, &container))
+                                   &g_container_type, &container))
     return -1;
   ContainerObject *cobj = reinterpret_cast<ContainerObject *>(container);
   Policy *policy;
@@ -142,6 +143,25 @@ int SetJobUILimitPolicyObject(PyObject *self,
   return 0;
 }
 
+int SetLogonPolicyObject(PyObject *self, PyObject *value, void *closure) {
+  PolicyObject *pobj = reinterpret_cast<PolicyObject *>(self);
+  if (!pobj->policy) {
+    PyErr_SetString(PyExc_RuntimeError, "not initialized");
+    return -1;
+  }
+  if (!PyType_IsSubtype(Py_TYPE(value), &g_logon_type)) {
+    PyErr_SetString(PyExc_TypeError, "logon object required");
+    return -1;
+  }
+  LogonObject *lobj = reinterpret_cast<LogonObject *>(value);
+  if (!lobj->logon) {
+    PyErr_SetString(PyExc_RuntimeError, "logon object not initialized");
+    return -1;
+  }
+  pobj->policy->SetLogon(move(lobj->logon));
+  return 0;
+}
+
 PyMethodDef policy_methods[] = {
   {NULL}
 };
@@ -150,6 +170,7 @@ PyGetSetDef policy_getset[] = {
   {"use_desktop", GetUseDesktopPolicyObject, SetUseDesktopPolicyObject},
   {"job_basic_limit", GetJobBasicLimitPolicyObject, SetJobBasicLimitPolicyObject},
   {"job_ui_limit", GetJobUILimitPolicyObject, SetJobUILimitPolicyObject},
+  {"logon", NULL, SetLogonPolicyObject},
   {NULL}
 };
 

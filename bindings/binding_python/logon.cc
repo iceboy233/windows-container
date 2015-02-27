@@ -42,7 +42,7 @@ int InitLogonObject(PyObject *self, PyObject *args, PyObject *kwds) {
 }
 
 int InitCurrentLogonObject(PyObject *self, PyObject *args, PyObject *kwds) {
-  static char *kwlist[] = {"integrity_level"};
+  static char *kwlist[] = {"integrity_level", NULL};
   DWORD integrity_level_obj = SECURITY_MANDATORY_LOW_RID;
   if (!PyArg_ParseTupleAndKeywords(args, kwds, "|I", kwlist,
                                    &integrity_level_obj))
@@ -50,6 +50,27 @@ int InitCurrentLogonObject(PyObject *self, PyObject *args, PyObject *kwds) {
 
   auto logon = make_unique<CurrentLogon>();
   ResultCode rc = logon->Init(integrity_level_obj);
+  if (rc != WINC_OK) {
+    SetErrorFromResultCode(rc);
+    return -1;
+  }
+
+  LogonObject *lobj = reinterpret_cast<LogonObject *>(self);
+  lobj->logon = move(logon);
+  return 0;
+}
+
+int InitUserLogonObject(PyObject *self, PyObject *args, PyObject *kwds) {
+  static char *kwlist[] = {"username", "password", "integrity_level", NULL};
+  Py_UNICODE *username, *password;
+  DWORD integrity_level_obj = SECURITY_MANDATORY_LOW_RID;
+  if (!PyArg_ParseTupleAndKeywords(args, kwds, "uu|I", kwlist,
+                                   &username, &password,
+                                   &integrity_level_obj))
+    return -1;
+
+  auto logon = make_unique<UserLogon>();
+  ResultCode rc = logon->Init(username, password, integrity_level_obj);
   if (rc != WINC_OK) {
     SetErrorFromResultCode(rc);
     return -1;
@@ -71,11 +92,17 @@ PyTypeObject g_logon_type {
 PyTypeObject g_current_logon_type {
   PyVarObject_HEAD_INIT(NULL, 0)
   "winc.CurrentLogon", // tp_name
-  sizeof(PyListObject), // tp_basicsize
+  sizeof(LogonObject), // tp_basicsize
+};
+
+PyTypeObject g_user_logon_type {
+  PyVarObject_HEAD_INIT(NULL, 0)
+  "winc.UserLogon",    // tp_name
+  sizeof(LogonObject), // tp_basicsize
 };
 
 int InitLogonTypes() {
-  g_logon_type.tp_flags = Py_TPFLAGS_DEFAULT;
+  g_logon_type.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
   g_logon_type.tp_new = CreateLogonObject;
   g_logon_type.tp_dealloc = DeleteLogonObject;
   g_logon_type.tp_init = InitLogonObject;
@@ -85,6 +112,11 @@ int InitLogonTypes() {
   g_current_logon_type.tp_flags = Py_TPFLAGS_DEFAULT;
   g_current_logon_type.tp_init = InitCurrentLogonObject;
   if (PyType_Ready(&g_current_logon_type) < 0)
+    return -1;
+  g_user_logon_type.tp_base = &g_logon_type;
+  g_user_logon_type.tp_flags = Py_TPFLAGS_DEFAULT;
+  g_user_logon_type.tp_init = InitUserLogonObject;
+  if (PyType_Ready(&g_user_logon_type) < 0)
     return -1;
   return 0;
 }

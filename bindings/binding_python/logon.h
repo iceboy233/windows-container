@@ -22,6 +22,7 @@ int InitLogonTypes();
 
 extern PyTypeObject g_logon_type;
 extern PyTypeObject g_current_logon_type;
+extern PyTypeObject g_user_logon_type;
 
 }
 
