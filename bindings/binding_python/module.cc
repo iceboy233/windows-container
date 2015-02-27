@@ -8,6 +8,7 @@
 #include "bindings/binding_python/container.h"
 #include "bindings/binding_python/target.h"
 #include "bindings/binding_python/policy.h"
+#include "bindings/binding_python/logon.h"
 
 using namespace winc::python;
 
@@ -33,6 +34,7 @@ PyMODINIT_FUNC initwinc() {
   InitContainerType();
   InitTargetType();
   InitPolicyType();
+  InitLogonTypes();
 
 #if PY_MAJOR_VERSION >= 3
   PyObject *module = PyModule_Create(&winc_module);
@@ -41,12 +43,21 @@ PyMODINIT_FUNC initwinc() {
 #endif
   Py_INCREF(g_error_class);
   PyModule_AddObject(module, "Error", g_error_class);
-  Py_INCREF(g_container_type);
-  PyModule_AddObject(module, "Container", g_container_type);
-  Py_INCREF(g_target_type);
-  PyModule_AddObject(module, "Target", g_target_type);
-  Py_INCREF(g_policy_type);
-  PyModule_AddObject(module, "Policy", g_policy_type);
+  Py_INCREF(&g_container_type);
+  PyModule_AddObject(module, "Container",
+                     reinterpret_cast<PyObject *>(&g_container_type));
+  Py_INCREF(&g_target_type);
+  PyModule_AddObject(module, "Target",
+                     reinterpret_cast<PyObject *>(&g_target_type));
+  Py_INCREF(&g_policy_type);
+  PyModule_AddObject(module, "Policy",
+                     reinterpret_cast<PyObject *>(&g_policy_type));
+  Py_INCREF(&g_logon_type);
+  PyModule_AddObject(module, "Logon",
+                     reinterpret_cast<PyObject *>(&g_logon_type));
+  Py_INCREF(&g_current_logon_type);
+  PyModule_AddObject(module, "CurrentLogon",
+                     reinterpret_cast<PyObject *>(&g_current_logon_type));
 
 #if PY_MAJOR_VERSION >= 3
   return module;

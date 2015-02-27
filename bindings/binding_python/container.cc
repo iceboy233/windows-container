@@ -86,7 +86,8 @@ PyObject *SpawnContainerObject(PyObject *self,
   if (target) {
     Py_INCREF(target);
   } else {
-    target = PyObject_CallObject(g_target_type, NULL);
+    target = PyObject_CallObject(reinterpret_cast<PyObject *>(&g_target_type),
+                                 NULL);
     if (!target)
       return NULL;
   }
@@ -130,14 +131,9 @@ PyObject *SpawnContainerObject(PyObject *self,
 }
 
 PyObject *GetPolicyContainerObject(PyObject *self, void *closure) {
-  return PyObject_CallFunctionObjArgs(g_policy_type, self, NULL);
+  return PyObject_CallFunctionObjArgs(reinterpret_cast<PyObject *>(&g_policy_type),
+                                      self, NULL);
 }
-
-PyTypeObject container_type = {
-  PyVarObject_HEAD_INIT(&PyType_Type, 0)
-  "winc.Container",         // tp_name
-  sizeof(ContainerObject),  // tp_basicsize
-};
 
 PyMethodDef container_methods[] = {
   {"spawn",
@@ -153,17 +149,20 @@ PyGetSetDef container_getset[] = {
 
 }
 
-PyObject *g_container_type;
+PyTypeObject g_container_type = {
+  PyVarObject_HEAD_INIT(NULL, 0)
+  "winc.Container",         // tp_name
+  sizeof(ContainerObject),  // tp_basicsize
+};
 
 int InitContainerType() {
-  container_type.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
-  container_type.tp_methods = container_methods;
-  container_type.tp_getset = container_getset;
-  container_type.tp_new = CreateContainerObject;
-  container_type.tp_dealloc = DeleteContainerObject;
-  if (PyType_Ready(&container_type) < 0)
+  g_container_type.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
+  g_container_type.tp_methods = container_methods;
+  g_container_type.tp_getset = container_getset;
+  g_container_type.tp_new = CreateContainerObject;
+  g_container_type.tp_dealloc = DeleteContainerObject;
+  if (PyType_Ready(&g_container_type) < 0)
     return -1;
-  g_container_type = reinterpret_cast<PyObject *>(&container_type);
   return 0;
 }
 

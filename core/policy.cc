@@ -22,9 +22,7 @@ namespace winc {
 ResultCode Policy::GetLogon(Logon **out_logon) {
   if (!logon_) {
     auto logon = make_unique<CurrentLogon>();
-    ResultCode rc = logon->Init(TOKEN_QUERY | TOKEN_DUPLICATE |
-                                TOKEN_ADJUST_DEFAULT | TOKEN_ASSIGN_PRIMARY,
-                                SECURITY_MANDATORY_LOW_RID);
+    ResultCode rc = logon->Init(SECURITY_MANDATORY_LOW_RID);
     if (rc != WINC_OK)
       return rc;
     logon_ = move(logon);

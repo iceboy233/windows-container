@@ -18,11 +18,13 @@ namespace winc {
 class Logon {
 protected:
   Logon()
-    : is_sid_cached_(false)
+    : is_user_sid_cached_(false)
+    , is_group_sid_cached_(false)
     {}
 
 public:
   virtual ~Logon() {}
+  ResultCode GetUserSid(Sid **out_sid) const;
   ResultCode GetGroupSid(Sid **out_sid) const;
   virtual ResultCode FilterToken(const SID_AND_ATTRIBUTES *sids,
                                  DWORD sids_count,
@@ -38,12 +40,15 @@ protected:
   }
 
 private:
-  ResultCode InitSidCache() const;
+  ResultCode InitUserSidCache() const;
+  ResultCode InitGroupSidCache() const;
 
 private:
   unique_handle token_;
-  mutable bool is_sid_cached_;
-  mutable Sid sid_cache_;
+  mutable bool is_user_sid_cached_;
+  mutable bool is_group_sid_cached_;
+  mutable Sid user_sid_cache_;
+  mutable Sid group_sid_cache_;
 
 private:
   Logon(const Logon &) = delete;
@@ -69,7 +74,7 @@ private:
 
 class CurrentLogon : public LogonWithIntegrity {
 public:
-  ResultCode Init(DWORD access, DWORD integrity_level);
+  ResultCode Init(DWORD integrity_level);
 };
 
 class UserLogon : public LogonWithIntegrity {

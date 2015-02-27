@@ -38,7 +38,7 @@ struct TargetObject {
 
 int InitTargetType();
 
-extern PyObject *g_target_type;
+extern PyTypeObject g_target_type;
 
 }
 

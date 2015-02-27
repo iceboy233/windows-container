@@ -142,12 +142,6 @@ int SetJobUILimitPolicyObject(PyObject *self,
   return 0;
 }
 
-PyTypeObject policy_type = {
-  PyVarObject_HEAD_INIT(&PyType_Type, 0)
-  "winc.Policy",        // tp_name
-  sizeof(PolicyObject), // tp_basicsize
-};
-
 PyMethodDef policy_methods[] = {
   {NULL}
 };
@@ -161,18 +155,21 @@ PyGetSetDef policy_getset[] = {
 
 }
 
-PyObject *g_policy_type;
+PyTypeObject g_policy_type = {
+  PyVarObject_HEAD_INIT(NULL, 0)
+  "winc.Policy",        // tp_name
+  sizeof(PolicyObject), // tp_basicsize
+};
 
 int InitPolicyType() {
-  policy_type.tp_flags = Py_TPFLAGS_DEFAULT;
-  policy_type.tp_methods = policy_methods;
-  policy_type.tp_getset = policy_getset;
-  policy_type.tp_new = CreatePolicyObject;
-  policy_type.tp_dealloc = DeletePolicyObject;
-  policy_type.tp_init = InitPolicyObject;
-  if (PyType_Ready(&policy_type) < 0)
+  g_policy_type.tp_flags = Py_TPFLAGS_DEFAULT;
+  g_policy_type.tp_methods = policy_methods;
+  g_policy_type.tp_getset = policy_getset;
+  g_policy_type.tp_new = CreatePolicyObject;
+  g_policy_type.tp_dealloc = DeletePolicyObject;
+  g_policy_type.tp_init = InitPolicyObject;
+  if (PyType_Ready(&g_policy_type) < 0)
     return -1;
-  g_policy_type = reinterpret_cast<PyObject *>(&policy_type);
   return 0;
 }
 

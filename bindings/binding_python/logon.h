@@ -2,24 +2,26 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef WINC_BINDING_PYTHON_CONTAINER_H_
-#define WINC_BINDING_PYTHON_CONTAINER_H_
+#ifndef WINC_BINDING_PYTHON_LOGON_H_
+#define WINC_BINDING_PYTHON_LOGON_H_
 
 #include <Python.h>
 #include <winc.h>
+#include <memory>
 
 namespace winc {
 
 namespace python {
 
-struct ContainerObject {
+struct LogonObject {
   PyObject_HEAD
-  Container container;
+  std::unique_ptr<Logon> logon;
 };
 
-int InitContainerType();
+int InitLogonTypes();
 
-extern PyTypeObject g_container_type;
+extern PyTypeObject g_logon_type;
+extern PyTypeObject g_current_logon_type;
 
 }
 

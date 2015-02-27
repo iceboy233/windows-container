@@ -5,6 +5,7 @@
 #include "core/logon.h"
 
 #include <Windows.h>
+#include <malloc.h>
 #include <vector>
 
 #include "core/sid.h"
@@ -13,14 +14,25 @@ using namespace std;
 
 namespace winc {
 
-ResultCode Logon::GetGroupSid(Sid **out_sid) const {
-  if (!is_sid_cached_) {
-    ResultCode rc = InitSidCache();
+ResultCode Logon::GetUserSid(Sid **out_sid) const {
+  if (!is_user_sid_cached_) {
+    ResultCode rc = InitUserSidCache();
     if (rc != WINC_OK)
       return rc;
   }
 
-  *out_sid = &sid_cache_;
+  *out_sid = &user_sid_cache_;
+  return WINC_OK;
+}
+
+ResultCode Logon::GetGroupSid(Sid **out_sid) const {
+  if (!is_group_sid_cached_) {
+    ResultCode rc = InitGroupSidCache();
+    if (rc != WINC_OK)
+      return rc;
+  }
+
+  *out_sid = &group_sid_cache_;
   return WINC_OK;
 }
 
@@ -37,7 +49,18 @@ ResultCode Logon::FilterToken(const SID_AND_ATTRIBUTES *sids,
   return WINC_OK;
 }
 
-ResultCode Logon::InitSidCache() const {
+ResultCode Logon::InitUserSidCache() const {
+  DWORD size = sizeof(TOKEN_USER) + SECURITY_MAX_SID_SIZE;
+  TOKEN_USER *info = reinterpret_cast<TOKEN_USER *>(_alloca(size));
+  if (!::GetTokenInformation(token_.get(), TokenUser, info, size, &size))
+    return WINC_ERROR_LOGON;
+
+  user_sid_cache_.Init(info->User.Sid);
+  is_user_sid_cached_ = true;
+  return WINC_OK;
+}
+
+ResultCode Logon::InitGroupSidCache() const {
   DWORD size;
   if (!::GetTokenInformation(token_.get(), TokenGroups, NULL, 0, &size) &&
       ::GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
@@ -49,8 +72,8 @@ ResultCode Logon::InitSidCache() const {
   if (::GetTokenInformation(token_.get(), TokenGroups, info, size, &size)) {
     for (unsigned int i = 0; i < info->GroupCount; ++i) {
       if (info->Groups[i].Attributes & SE_GROUP_LOGON_ID) {
-        sid_cache_.Init(info->Groups[i].Sid);
-        is_sid_cached_ = true;
+        group_sid_cache_.Init(info->Groups[i].Sid);
+        is_group_sid_cached_ = true;
         return WINC_OK;
       }
     }
@@ -124,9 +147,12 @@ ResultCode LogonWithIntegrity::GrantAccess(HANDLE object,
   return Logon::GrantAccess(object, object_type, allowed_access);
 }
 
-ResultCode CurrentLogon::Init(DWORD access, DWORD integrity_level) {
+ResultCode CurrentLogon::Init(DWORD integrity_level) {
   HANDLE token;
-  if (!::OpenProcessToken(::GetCurrentProcess(), access, &token))
+  if (!::OpenProcessToken(::GetCurrentProcess(),
+                          TOKEN_QUERY | TOKEN_DUPLICATE |
+                          TOKEN_ADJUST_DEFAULT | TOKEN_ASSIGN_PRIMARY,
+                          &token))
     return WINC_ERROR_LOGON;
   set_token(token);
   LogonWithIntegrity::Init(integrity_level);

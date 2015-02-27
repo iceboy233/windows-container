@@ -24,7 +24,7 @@ struct PolicyObject {
 
 int InitPolicyType();
 
-extern PyObject *g_policy_type;
+extern PyTypeObject g_policy_type;
 
 }
 

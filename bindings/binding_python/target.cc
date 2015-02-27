@@ -117,12 +117,6 @@ PyObject *GetProcessExitCodeTargetObject(PyObject *self, void *closure) {
   return PyLong_FromUnsignedLong(exit_code);
 }
 
-PyTypeObject target_type = {
-  PyVarObject_HEAD_INIT(&PyType_Type, 0)
-  "winc.Target",        // tp_name
-  sizeof(TargetObject), // tp_basicsize
-};
-
 PyMethodDef target_methods[] = {
   {"start",            StartTargetObject,          METH_NOARGS},
   {"wait_for_process", WaitForProcessTargetObject, METH_NOARGS},
@@ -187,17 +181,20 @@ void TargetDirector::OnMemoryLimit(DWORD process_id) {
   PyGILState_Release(gstate);
 }
 
-PyObject *g_target_type;
+PyTypeObject g_target_type = {
+  PyVarObject_HEAD_INIT(NULL, 0)
+  "winc.Target",        // tp_name
+  sizeof(TargetObject), // tp_basicsize
+};
 
 int InitTargetType() {
-  target_type.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
-  target_type.tp_methods = target_methods;
-  target_type.tp_getset = target_getset;
-  target_type.tp_new = CreateTargetObject;
-  target_type.tp_dealloc = DeleteTargetObject;
-  if (PyType_Ready(&target_type) < 0)
+  g_target_type.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
+  g_target_type.tp_methods = target_methods;
+  g_target_type.tp_getset = target_getset;
+  g_target_type.tp_new = CreateTargetObject;
+  g_target_type.tp_dealloc = DeleteTargetObject;
+  if (PyType_Ready(&g_target_type) < 0)
     return -1;
-  g_target_type = reinterpret_cast<PyObject *>(&target_type);
   return 0;
 }
 
