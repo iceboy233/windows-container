@@ -20,8 +20,6 @@ PyObject *CreateTargetObject(PyTypeObject *subtype,
   PyObject *obj = subtype->tp_alloc(subtype, 0);
   if (!obj)
     return NULL;
-  // Target director may initate callback in its worker thread
-  PyEval_InitThreads();
   TargetObject *tobj = reinterpret_cast<TargetObject *>(obj);
   new (&tobj->target) TargetDirector;
   tobj->container_object = NULL;
@@ -30,18 +28,24 @@ PyObject *CreateTargetObject(PyTypeObject *subtype,
 
 void DeleteTargetObject(PyObject *self) {
   TargetObject *tobj = reinterpret_cast<TargetObject *>(self);
-  Py_BEGIN_ALLOW_THREADS
   tobj->target.~TargetDirector();
-  Py_END_ALLOW_THREADS
   Py_XDECREF(tobj->container_object);
   Py_TYPE(self)->tp_free(self);
 }
 
 PyObject *StartTargetObject(PyObject *self, PyObject *args) {
   TargetObject *tobj = reinterpret_cast<TargetObject *>(self);
-  ResultCode rc = tobj->target.Start();
-  if (rc != WINC_OK)
+  // The event dispatcher owns the target object
+  Py_INCREF(self);
+  PyEval_InitThreads();
+  ResultCode rc;
+  Py_BEGIN_ALLOW_THREADS
+  rc = tobj->target.Start(true);
+  Py_END_ALLOW_THREADS
+  if (rc != WINC_OK) {
+    Py_DECREF(self);
     return SetErrorFromResultCode(rc);
+  }
   Py_INCREF(self);
   return self;
 }
@@ -151,6 +155,8 @@ void TargetDirector::OnExitAll() {
   if (!PyObject_CallMethod(reinterpret_cast<PyObject *>(tobj),
                            "on_exit_all", NULL))
     PyErr_Clear();
+  // No further message will be dispatched, release the target object
+  Py_DECREF(tobj);
   PyGILState_Release(gstate);
 }
 

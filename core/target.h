@@ -19,22 +19,23 @@ class JobObject;
 class Target {
 public:
   Target();
-  explicit Target(bool listen);
   virtual ~Target();
 
 private:
   friend class Container;
-  ResultCode Assign(DWORD process_id,
-                    std::unique_ptr<JobObject> &job_object,
-                    unique_handle &process_handle,
-                    unique_handle &thread_handle);
+  void Assign(DWORD process_id, std::unique_ptr<JobObject> &job_object,
+              unique_handle &process_handle, unique_handle &thread_handle);
 
 public:
   DWORD process_id() {
     return process_id_;
   }
 
-  ResultCode Start();
+  ResultCode Start() {
+    return Start(false);
+  }
+
+  ResultCode Start(bool listen);
   ResultCode WaitForProcess();
   ResultCode GetJobTime(ULONG64 *out_time);
   ResultCode GetProcessTime(ULONG64 *out_time);
@@ -52,7 +53,6 @@ protected:
   virtual void OnMemoryLimit(DWORD process_id) {}
 
 private:
-  bool listen_;
   bool listening_;
   DWORD process_id_;
   std::unique_ptr<JobObject> job_object_;

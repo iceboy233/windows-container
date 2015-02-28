@@ -150,8 +150,9 @@ ResultCode Container::Spawn(const wchar_t *exe_path,
   if (!NT_SUCCESS(status))
     return WINC_ERROR_SPAWN;
 
-  return target->Assign(pi.dwProcessId, job_object_holder,
-                        process_holder, thread_holder);
+  target->Assign(pi.dwProcessId, job_object_holder,
+                 process_holder, thread_holder);
+  return WINC_OK;
 }
 
 ResultCode Container::GetPolicy(Policy **out_policy) {

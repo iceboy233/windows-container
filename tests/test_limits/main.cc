@@ -15,8 +15,7 @@ using namespace winc;
 class MyTarget : public Target {
 public:
   MyTarget()
-    : Target(true)
-    , my_event_(NULL)
+    : my_event_(NULL)
     {}
 
   virtual ~MyTarget() override {
@@ -34,13 +33,26 @@ public:
 
   virtual void OnActiveProcessLimit() override {
     fprintf(stderr, "Active process limit exceeded\n");
+  }
+
+  virtual void OnExitAll() override {
+    fprintf(stderr, "All processes exited\n");
     ::SetEvent(my_event_);
+  }
+
+  virtual void OnNewProcess(DWORD process_id) override {
+    fprintf(stderr, "Process created, PID = %" PRIu32 "\n",
+            process_id);
+  }
+
+  virtual void OnExitProcess(DWORD process_id) override {
+    fprintf(stderr, "Process exited, PID = %" PRIu32 "\n",
+            process_id);
   }
 
   virtual void OnMemoryLimit(DWORD process_id) override {
     fprintf(stderr, "Memory limit exceeded, PID = %" PRIu32 "\n",
             process_id);
-    ::SetEvent(my_event_);
   }
 
   ResultCode Wait() {
@@ -76,7 +88,7 @@ int main() {
     exit(1);
   }
 
-  rc = t.Start();
+  rc = t.Start(true);
   if (rc != WINC_OK) {
     fprintf(stderr, "Start error %d\n", rc);
     exit(1);

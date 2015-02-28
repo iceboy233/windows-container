@@ -41,10 +41,6 @@ uint32_t GetArg<uint32_t>(wchar_t *argv[], int &arg_index, int argc) {
 
 class MyTarget : public Target {
 public:
-  explicit MyTarget(bool listen)
-    : Target(listen)
-    {}
-
   virtual void OnActiveProcessLimit() override {
     fwprintf(stderr, L"Active process limit exceeded\n");
   }
@@ -174,14 +170,15 @@ int wmain(int argc, wchar_t *argv[]) {
   if (verbose)
     fwprintf(stderr, L"Command line: %ws\n", command_line.data());
 
-  MyTarget t(listen);
+  MyTarget t;
   rc = c.Spawn(name_buffer, &t, &o);
   if (rc != WINC_OK)
     PrintErrorAndExit(rc);
   ::SetConsoleCtrlHandler(NULL, TRUE);
-  rc = t.Start();
+  rc = t.Start(listen);
   if (rc != WINC_OK)
     PrintErrorAndExit(rc);
+  // TODO(iceboy): In listen mode, events after process exit will be discarded
   rc = t.WaitForProcess();
   if (rc != WINC_OK)
     PrintErrorAndExit(rc);

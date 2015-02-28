@@ -15,12 +15,6 @@ namespace python {
 struct ContainerObject;
 
 class TargetDirector : public Target {
-public:
-  TargetDirector()
-    : Target(true)
-    {}
-  virtual ~TargetDirector() = default;
-
 protected:
   virtual void OnActiveProcessLimit() override;
   virtual void OnExitAll() override;

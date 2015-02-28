@@ -17,13 +17,7 @@ using std::unique_ptr;
 namespace winc {
 
 Target::Target()
-  : listen_(false)
-  , listening_(false)
-  {}
-
-Target::Target(bool listen)
-  : listen_(listen)
-  , listening_(false)
+  : listening_(false)
   {}
 
 Target::~Target() {
@@ -31,24 +25,22 @@ Target::~Target() {
     JobObject::DeassociateCompletionPort(this);
 }
 
-ResultCode Target::Assign(DWORD process_id,
-                          unique_ptr<JobObject> &job_object,
-                          unique_handle &process_handle,
-                          unique_handle &thread_handle) {
+void Target::Assign(DWORD process_id, unique_ptr<JobObject> &job_object,
+                    unique_handle &process_handle,
+                    unique_handle &thread_handle) {
   process_id_ = process_id;
   job_object_ = move(job_object);
   process_handle_ = move(process_handle);
   thread_handle_ = move(thread_handle);
-  if (listen_) {
+}
+
+ResultCode Target::Start(bool listen) {
+  if (listen) {
     ResultCode rc = job_object_->AssociateCompletionPort(this);
     if (rc != WINC_OK)
       return rc;
     listening_ = true;
   }
-  return WINC_OK;
-}
-
-ResultCode Target::Start() {
   DWORD ret = ::ResumeThread(thread_handle_.get());
   if (ret == static_cast<DWORD>(-1)) {
     return WINC_ERROR_TARGET;
