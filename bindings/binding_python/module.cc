@@ -14,8 +14,19 @@
 
 using namespace winc::python;
 
-#if PY_MAJOR_VERSION >= 3
 namespace {
+
+void BuildSidObject(PyObject *module, const char *name,
+                    WELL_KNOWN_SID_TYPE type) {
+  PyObject *obj = PyObject_CallFunction(reinterpret_cast<PyObject *>(&g_sid_type),
+                                        "i", static_cast<int>(type));
+  if (!obj)
+    return;
+  if (PyModule_AddObject(module, name, obj) < 0)
+    Py_DECREF(obj);
+}
+
+#if PY_MAJOR_VERSION >= 3
 
 struct PyModuleDef winc_module = {
   PyModuleDef_HEAD_INIT,
@@ -24,8 +35,9 @@ struct PyModuleDef winc_module = {
   -1
 };
 
-}
 #endif
+
+}
 
 #if PY_MAJOR_VERSION >= 3
 PyMODINIT_FUNC PyInit_winc() {
@@ -74,6 +86,13 @@ PyMODINIT_FUNC initwinc() {
                      PyLong_FromUnsignedLong(SECURITY_MANDATORY_MEDIUM_RID));
   PyModule_AddObject(module, "HIGH_INTEGRITY_LEVEL",
                      PyLong_FromUnsignedLong(SECURITY_MANDATORY_HIGH_RID));
+
+  BuildSidObject(module, "WinNullSid", WinNullSid);
+  BuildSidObject(module, "WinWorldSid", WinWorldSid);
+  BuildSidObject(module, "WinInteractiveSid", WinInteractiveSid);
+  BuildSidObject(module, "WinAuthenticatedUserSid", WinAuthenticatedUserSid);
+  BuildSidObject(module, "WinRestrictedCodeSid", WinRestrictedCodeSid);
+  BuildSidObject(module, "WinBuiltinUsersSid", WinBuiltinUsersSid);
 
 #if PY_MAJOR_VERSION >= 3
   return module;

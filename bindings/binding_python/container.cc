@@ -78,7 +78,7 @@ PyObject *SpawnContainerObject(PyObject *self,
   PyObject *stderr_handle = NULL;
   if (!PyArg_ParseTupleAndKeywords(args, kwds, "u|O!OOO", kwlist,
                                    &exe_path,
-                                   g_target_type, &target,
+                                   &g_target_type, &target,
                                    &stdin_handle,
                                    &stdout_handle,
                                    &stderr_handle))
