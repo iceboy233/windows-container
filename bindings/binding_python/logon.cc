@@ -10,6 +10,7 @@
 #include <memory>
 
 #include "bindings/binding_python/error.h"
+#include "bindings/binding_python/sid.h"
 
 using std::make_unique;
 using std::unique_ptr;
@@ -81,6 +82,54 @@ int InitUserLogonObject(PyObject *self, PyObject *args, PyObject *kwds) {
   return 0;
 }
 
+PyObject *GetUserSidLogonObject(PyObject *self, void *closure) {
+  LogonObject *lobj = reinterpret_cast<LogonObject *>(self);
+  if (!lobj->logon) {
+    PyErr_SetString(PyExc_RuntimeError, "not initialized");
+    return NULL;
+  }
+  Sid *sid;
+  ResultCode rc = lobj->logon->GetUserSid(&sid);
+  if (rc != WINC_OK)
+    return SetErrorFromResultCode(rc);
+  SidObject *sobj = PyObject_New(SidObject, &g_sid_type);
+  if (!sobj)
+    return NULL;
+  rc = sobj->sid.Init(sid);
+  if (rc != WINC_OK) {
+    Py_DECREF(sobj);
+    return SetErrorFromResultCode(rc);
+  }
+  return reinterpret_cast<PyObject *>(sobj);
+}
+
+PyObject *GetGroupSidLogonObject(PyObject *self, void *closure) {
+  LogonObject *lobj = reinterpret_cast<LogonObject *>(self);
+  if (!lobj->logon) {
+    PyErr_SetString(PyExc_RuntimeError, "not initialized");
+    return NULL;
+  }
+  Sid *sid;
+  ResultCode rc = lobj->logon->GetGroupSid(&sid);
+  if (rc != WINC_OK)
+    return SetErrorFromResultCode(rc);
+  SidObject *sobj = PyObject_New(SidObject, &g_sid_type);
+  if (!sobj)
+    return NULL;
+  rc = sobj->sid.Init(sid);
+  if (rc != WINC_OK) {
+    Py_DECREF(sobj);
+    return SetErrorFromResultCode(rc);
+  }
+  return reinterpret_cast<PyObject *>(sobj);
+}
+
+PyGetSetDef logon_getset[] = {
+  {"user_sid", GetUserSidLogonObject, NULL},
+  {"group_sid", GetGroupSidLogonObject, NULL},
+  {NULL}
+};
+
 }
 
 PyTypeObject g_logon_type {
@@ -106,6 +155,7 @@ int InitLogonTypes() {
   g_logon_type.tp_new = CreateLogonObject;
   g_logon_type.tp_dealloc = DeleteLogonObject;
   g_logon_type.tp_init = InitLogonObject;
+  g_logon_type.tp_getset = logon_getset;
   if (PyType_Ready(&g_logon_type) < 0)
     return -1;
   g_current_logon_type.tp_base = &g_logon_type;

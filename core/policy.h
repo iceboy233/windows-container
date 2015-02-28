@@ -34,6 +34,10 @@ public:
   void RemoveRestrictSid(const Sid &sid);
 
 public:
+  const std::vector<Sid> &restricted_sids() {
+    return restricted_sids_;
+  }
+
   bool use_desktop() {
     return use_desktop_;
   }

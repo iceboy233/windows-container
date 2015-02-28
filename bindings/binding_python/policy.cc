@@ -5,10 +5,14 @@
 #include "bindings/binding_python/policy.h"
 
 #include <Python.h>
+#include <vector>
 
 #include "bindings/binding_python/container.h"
 #include "bindings/binding_python/error.h"
 #include "bindings/binding_python/logon.h"
+#include "bindings/binding_python/sid.h"
+
+using std::vector;
 
 namespace winc {
 
@@ -162,7 +166,61 @@ int SetLogonPolicyObject(PyObject *self, PyObject *value, void *closure) {
   return 0;
 }
 
+PyObject *AddRestrictedSidPolicyObject(PyObject *self, PyObject *args) {
+  SidObject *sobj;
+  if (!PyArg_ParseTuple(args, "O!", &g_sid_type, &sobj))
+    return NULL;
+  PolicyObject *pobj = reinterpret_cast<PolicyObject *>(self);
+  if (!pobj->policy) {
+    PyErr_SetString(PyExc_RuntimeError, "not initialized");
+    return NULL;
+  }
+  pobj->policy->AddRestrictSid(sobj->sid);
+  Py_RETURN_NONE;
+}
+
+PyObject *RemoveRestrictedSidPolicyObject(PyObject *self, PyObject *args) {
+  SidObject *sobj;
+  if (!PyArg_ParseTuple(args, "O!", &g_sid_type, &sobj))
+    return NULL;
+  PolicyObject *pobj = reinterpret_cast<PolicyObject *>(self);
+  if (!pobj->policy) {
+    PyErr_SetString(PyExc_RuntimeError, "not initialized");
+    return NULL;
+  }
+  pobj->policy->RemoveRestrictSid(sobj->sid);
+  Py_RETURN_NONE;
+}
+
+PyObject *GetRestrictedSids(PyObject *self, void *closure) {
+  PolicyObject *pobj = reinterpret_cast<PolicyObject *>(self);
+  if (!pobj->policy) {
+    PyErr_SetString(PyExc_RuntimeError, "not initialized");
+    return NULL;
+  }
+  vector<Sid> sids = pobj->policy->restricted_sids();
+  PyObject *tuple = PyTuple_New(sids.size());
+  if (!tuple)
+    return NULL;
+  for (size_t index = 0; index < sids.size(); ++index) {
+    SidObject *sobj = PyObject_New(SidObject, &g_sid_type);
+    if (!sobj) {
+      Py_DECREF(tuple);
+      return NULL;
+    }
+    PyTuple_SetItem(tuple, index, reinterpret_cast<PyObject *>(sobj));
+    ResultCode rc = sobj->sid.Init(sids[index].data());
+    if (rc != WINC_OK) {
+      Py_DECREF(tuple);
+      return SetErrorFromResultCode(rc);
+    }
+  }
+  return tuple;
+}
+
 PyMethodDef policy_methods[] = {
+  {"add_restricted_sid", AddRestrictedSidPolicyObject, METH_VARARGS},
+  {"remove_restricted_sid", RemoveRestrictedSidPolicyObject, METH_VARARGS},
   {NULL}
 };
 
@@ -171,6 +229,7 @@ PyGetSetDef policy_getset[] = {
   {"job_basic_limit", GetJobBasicLimitPolicyObject, SetJobBasicLimitPolicyObject},
   {"job_ui_limit", GetJobUILimitPolicyObject, SetJobUILimitPolicyObject},
   {"logon", NULL, SetLogonPolicyObject},
+  {"restricted_sids", GetRestrictedSids, NULL},
   {NULL}
 };
 

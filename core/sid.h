@@ -38,6 +38,10 @@ public:
     return ::EqualSid(data(), other.data()) != 0;
   }
 
+  bool operator!=(const Sid &other) {
+    return !operator==(other);
+  }
+
 private:
   BYTE data_[SECURITY_MAX_SID_SIZE];
 };

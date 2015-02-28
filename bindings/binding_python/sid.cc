@@ -55,7 +55,7 @@ int InitSidObject(PyObject *self, PyObject *args, PyObject *kwds) {
     }
     return 0;
   }
-  
+
   if (PyUnicode_Check(arg)) {
     PSID sid;
     Py_UNICODE *string_sid = PyUnicode_AsUnicode(arg);
@@ -76,21 +76,50 @@ int InitSidObject(PyObject *self, PyObject *args, PyObject *kwds) {
   return -1;
 }
 
-PyObject *ReprSidObject(PyObject *self) {
+PyObject *StrSidObject(PyObject *self) {
   SidObject *sobj = reinterpret_cast<SidObject *>(self);
   LPWSTR string_sid;
   if (!::ConvertSidToStringSidW(sobj->sid.data(), &string_sid))
     return PyErr_SetFromWindowsErr(::GetLastError());
-  PyObject *string_sid_obj = PyUnicode_FromWideChar(string_sid, -1);
+  PyObject *str = PyUnicode_FromWideChar(string_sid, wcslen(string_sid));
   ::LocalFree(string_sid);
-  if (!string_sid_obj)
+  return str;
+}
+
+PyObject *ReprSidObject(PyObject *self) {
+  PyObject *str = StrSidObject(self);
+  if (!str)
     return NULL;
-  PyObject *string_repr = Py_TYPE(string_sid_obj)->tp_repr(string_sid_obj);
-  wstring repr = L"Sid(";
-  repr += PyUnicode_AsUnicode(string_repr);
-  Py_DECREF(string_repr);
-  repr.push_back(L')');
+#if PY_MAJOR_VERSION >= 3
+  wstring repr = L"Sid('";
+#else
+  wstring repr = L"Sid(u'";
+#endif
+  repr += PyUnicode_AsUnicode(str);
+  Py_DECREF(str);
+  repr += L"')";
   return PyUnicode_FromWideChar(repr.data(), repr.size());
+}
+
+PyObject *CompareSidObject(PyObject *obj1, PyObject *obj2, int op) {
+  SidObject *sobj1 = reinterpret_cast<SidObject *>(obj1);
+  SidObject *sobj2 = reinterpret_cast<SidObject *>(obj2);
+  PyObject *result;
+
+  switch (op) {
+  case Py_EQ:
+    result = (sobj1->sid == sobj2->sid) ? Py_True : Py_False;
+    break;
+  case Py_NE:
+    result = (sobj1->sid != sobj2->sid) ? Py_True : Py_False;
+    break;
+  default:
+    result = Py_NotImplemented;
+    break;
+  }
+
+  Py_INCREF(result);
+  return result;
 }
 
 }
@@ -106,7 +135,9 @@ int InitSidType() {
   g_sid_type.tp_new = CreateSidObject;
   g_sid_type.tp_dealloc = DeleteSidObject;
   g_sid_type.tp_init = InitSidObject;
+  g_sid_type.tp_str = StrSidObject;
   g_sid_type.tp_repr = ReprSidObject;
+  g_sid_type.tp_richcompare = CompareSidObject;
   if (PyType_Ready(&g_sid_type) < 0)
     return -1;
   return 0;
