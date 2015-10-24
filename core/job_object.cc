@@ -151,6 +151,12 @@ ResultCode JobObject::GetAccountInfo(JOBOBJECT_BASIC_ACCOUNTING_INFORMATION *inf
   return WINC_OK;
 }
 
+ResultCode JobObject::Terminate(UINT exit_code) {
+  if (!::TerminateJobObject(job_.get(), exit_code))
+    return WINC_ERROR_JOB_OBJECT;
+  return WINC_OK;
+}
+
 ResultCode JobObject::AssociateCompletionPort(Target *target) {
   JobObjectSharedResource *sr;
   ResultCode rc = InitJobObjectSharedResource(&sr);

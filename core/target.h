@@ -37,6 +37,7 @@ public:
 
   ResultCode Start(bool listen);
   ResultCode WaitForProcess();
+  ResultCode TerminateJob(UINT exit_code);
   ResultCode GetJobTime(ULONG64 *out_time);
   ResultCode GetProcessTime(ULONG64 *out_time);
   ResultCode GetProcessCycle(ULONG64 *out_cycle);

@@ -24,6 +24,7 @@ public:
   ResultCode GetUILimit(JOBOBJECT_BASIC_UI_RESTRICTIONS *ui_limit);
   ResultCode SetUILimit(const JOBOBJECT_BASIC_UI_RESTRICTIONS &ui_limit);
   ResultCode GetAccountInfo(JOBOBJECT_BASIC_ACCOUNTING_INFORMATION *info);
+  ResultCode Terminate(UINT exit_code);
 
 private:
   static DWORD WINAPI MessageThread(PVOID param);

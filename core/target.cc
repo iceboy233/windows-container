@@ -55,6 +55,11 @@ ResultCode Target::WaitForProcess() {
   return WINC_OK;
 }
 
+ResultCode Target::TerminateJob(UINT exit_code)
+{
+  return job_object_->Terminate(exit_code);
+}
+
 ResultCode Target::GetJobTime(ULONG64 *out_time) {
   JOBOBJECT_BASIC_ACCOUNTING_INFORMATION info;
   ResultCode rc = job_object_->GetAccountInfo(&info);

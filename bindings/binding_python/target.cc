@@ -62,6 +62,18 @@ PyObject *WaitForProcessTargetObject(PyObject *self, PyObject *args) {
   return self;
 }
 
+PyObject *TerminateJobTargetObject(PyObject *self, PyObject *args) {
+  TargetObject *tobj = reinterpret_cast<TargetObject *>(self);
+  unsigned int exit_code = 0;
+  if (!PyArg_ParseTuple(args, "|I", &exit_code))
+    return NULL;
+  ResultCode rc = tobj->target.TerminateJob(exit_code);
+  if (rc != WINC_OK)
+    return SetErrorFromResultCode(rc);
+  Py_INCREF(self);
+  return self;
+}
+
 PyObject *GetProcessIdTargetObject(PyObject *self, void *closure) {
   TargetObject *tobj = reinterpret_cast<TargetObject *>(self);
   return PyLong_FromUnsignedLong(tobj->target.process_id());
@@ -124,6 +136,7 @@ PyObject *GetProcessExitCodeTargetObject(PyObject *self, void *closure) {
 PyMethodDef target_methods[] = {
   {"start",            StartTargetObject,          METH_NOARGS},
   {"wait_for_process", WaitForProcessTargetObject, METH_NOARGS},
+  {"terminate_job",    TerminateJobTargetObject,   METH_VARARGS},
   {NULL}
 };
 
