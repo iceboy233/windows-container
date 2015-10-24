@@ -36,7 +36,12 @@ public:
   }
 
   ResultCode Start(bool listen);
-  ResultCode WaitForProcess();
+
+  ResultCode WaitForProcess() {
+    return WaitForProcess(INFINITE, nullptr);
+  }
+
+  ResultCode WaitForProcess(DWORD timeout_ms, bool *timeouted);
   ResultCode TerminateJob(UINT exit_code);
   ResultCode GetJobTime(ULONG64 *out_time);
   ResultCode GetProcessTime(ULONG64 *out_time);

@@ -49,9 +49,12 @@ ResultCode Target::Start(bool listen) {
   return WINC_OK;
 }
 
-ResultCode Target::WaitForProcess() {
-  if (::WaitForSingleObject(process_handle_.get(), INFINITE) == WAIT_FAILED)
+ResultCode Target::WaitForProcess(DWORD timeout_ms, bool *timeouted) {
+  DWORD ret = ::WaitForSingleObject(process_handle_.get(), timeout_ms);
+  if (ret == WAIT_FAILED)
     return WINC_ERROR_TARGET;
+  if (timeouted)
+    *timeouted = (ret == WAIT_TIMEOUT);
   return WINC_OK;
 }
 

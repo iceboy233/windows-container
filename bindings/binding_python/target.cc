@@ -52,14 +52,20 @@ PyObject *StartTargetObject(PyObject *self, PyObject *args) {
 
 PyObject *WaitForProcessTargetObject(PyObject *self, PyObject *args) {
   TargetObject *tobj = reinterpret_cast<TargetObject *>(self);
+  unsigned int timeout_ms = INFINITE;
+  if (!PyArg_ParseTuple(args, "|I", &timeout_ms))
+    return NULL;
+  bool timeouted;
   ResultCode rc;
   Py_BEGIN_ALLOW_THREADS
-  rc = tobj->target.WaitForProcess();
+  rc = tobj->target.WaitForProcess(timeout_ms, &timeouted);
   Py_END_ALLOW_THREADS
   if (rc != WINC_OK)
     return SetErrorFromResultCode(rc);
-  Py_INCREF(self);
-  return self;
+  if (timeouted)
+    Py_RETURN_TRUE;
+  else
+    Py_RETURN_FALSE;
 }
 
 PyObject *TerminateJobTargetObject(PyObject *self, PyObject *args) {
@@ -135,7 +141,7 @@ PyObject *GetProcessExitCodeTargetObject(PyObject *self, void *closure) {
 
 PyMethodDef target_methods[] = {
   {"start",            StartTargetObject,          METH_NOARGS},
-  {"wait_for_process", WaitForProcessTargetObject, METH_NOARGS},
+  {"wait_for_process", WaitForProcessTargetObject, METH_VARARGS},
   {"terminate_job",    TerminateJobTargetObject,   METH_VARARGS},
   {NULL}
 };
