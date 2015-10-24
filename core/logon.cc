@@ -105,7 +105,7 @@ ResultCode LogonWithIntegrity::FilterToken(const SID_AND_ATTRIBUTES *sids,
   if (!::SetTokenInformation(new_token, TokenIntegrityLevel,
                              &tml, sizeof(tml) + sid.GetLength())) {
     ::CloseHandle(new_token);
-    return rc;
+    return WINC_ERROR_LOGON;
   }
 
   *out_token = new_token;
