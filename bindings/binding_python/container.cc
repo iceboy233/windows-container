@@ -68,16 +68,18 @@ HANDLE GetInheritableHandle(PyObject *handle, unique_handle *out_holder) {
 
 PyObject *SpawnContainerObject(PyObject *self,
                                PyObject *args, PyObject *kwds) {
-  static char *kwlist[] = {"exe_path", "target",
+  static char *kwlist[] = {"exe_path", "command_line", "target",
                            "stdin_handle", "stdout_handle", "stderr_handle",
                            NULL};
   Py_UNICODE *exe_path;
+  Py_UNICODE *command_line = NULL;
   PyObject *target = NULL;
   PyObject *stdin_handle = NULL;
   PyObject *stdout_handle = NULL;
   PyObject *stderr_handle = NULL;
-  if (!PyArg_ParseTupleAndKeywords(args, kwds, "u|O!OOO", kwlist,
+  if (!PyArg_ParseTupleAndKeywords(args, kwds, "u|uO!OOO", kwlist,
                                    &exe_path,
+                                   &command_line,
                                    &g_target_type, &target,
                                    &stdin_handle,
                                    &stdout_handle,
@@ -99,6 +101,7 @@ PyObject *SpawnContainerObject(PyObject *self,
   }
   unique_handle stdin_holder, stdout_holder, stderr_holder;
   SpawnOptions options = {};
+  options.command_line = command_line;
   options.stdin_handle = GetInheritableHandle(stdin_handle, &stdin_holder);
   if (!options.stdin_handle && PyErr_Occurred()) {
     Py_DECREF(target);
