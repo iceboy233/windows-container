@@ -34,19 +34,23 @@ void DeleteContainerObject(PyObject *self) {
   Py_TYPE(self)->tp_free(self);
 }
 
-HANDLE GetInheritableHandle(PyObject *handle, unique_handle *out_holder) {
-  if (!handle)
+void *GetOptionalPointer(PyObject *object) {
+  if (!object)
     return NULL;
 #if PY_MAJOR_VERSION >= 3
-  if (!PyLong_Check(handle)) {
+  if (!PyLong_Check(object)) {
 #else
-  if (!PyInt_Check(handle) && !PyLong_Check(handle)) {
+  if (!PyInt_Check(object) && !PyLong_Check(object)) {
 #endif
     PyErr_SetString(PyExc_TypeError, "integer expected");
     return NULL;
   }
-  HANDLE object = PyLong_AsVoidPtr(handle);
-  if (!object && PyErr_Occurred())
+  return PyLong_AsVoidPtr(object);
+}
+
+HANDLE GetInheritableHandle(PyObject *handle, unique_handle *out_holder) {
+  HANDLE object = GetOptionalPointer(handle);
+  if (!object)
     return NULL;
   DWORD flags;
   if (!::GetHandleInformation(object, &flags)) {
@@ -68,19 +72,27 @@ HANDLE GetInheritableHandle(PyObject *handle, unique_handle *out_holder) {
 
 PyObject *SpawnContainerObject(PyObject *self,
                                PyObject *args, PyObject *kwds) {
-  static char *kwlist[] = {"exe_path", "command_line", "target",
+  static char *kwlist[] = {"exe_path", "target",
+                           "command_line", "processor_affinity",
+                           "memory_limit", "active_process_limit",
                            "stdin_handle", "stdout_handle", "stderr_handle",
                            NULL};
   Py_UNICODE *exe_path;
-  Py_UNICODE *command_line = NULL;
   PyObject *target = NULL;
+  Py_UNICODE *command_line = NULL;
+  PyObject *processor_affinity = NULL;
+  PyObject *memory_limit = NULL;
+  unsigned int active_process_limit = 0;
   PyObject *stdin_handle = NULL;
   PyObject *stdout_handle = NULL;
   PyObject *stderr_handle = NULL;
-  if (!PyArg_ParseTupleAndKeywords(args, kwds, "u|uO!OOO", kwlist,
+  if (!PyArg_ParseTupleAndKeywords(args, kwds, "u|O!uOOIOOO", kwlist,
                                    &exe_path,
-                                   &command_line,
                                    &g_target_type, &target,
+                                   &command_line,
+                                   &processor_affinity,
+                                   &memory_limit,
+                                   &active_process_limit,
                                    &stdin_handle,
                                    &stdout_handle,
                                    &stderr_handle))
@@ -102,6 +114,17 @@ PyObject *SpawnContainerObject(PyObject *self,
   unique_handle stdin_holder, stdout_holder, stderr_holder;
   SpawnOptions options = {};
   options.command_line = command_line;
+  if (!(options.processor_affinity = reinterpret_cast<uintptr_t>(
+      GetOptionalPointer(processor_affinity))) && PyErr_Occurred()) {
+    Py_DECREF(target);
+    return NULL;
+  }
+  if (!(options.memory_limit = reinterpret_cast<uintptr_t>(
+      GetOptionalPointer(memory_limit))) && PyErr_Occurred()) {
+    Py_DECREF(target);
+    return NULL;
+  }
+  options.active_process_limit = active_process_limit;
   options.stdin_handle = GetInheritableHandle(stdin_handle, &stdin_holder);
   if (!options.stdin_handle && PyErr_Occurred()) {
     Py_DECREF(target);
