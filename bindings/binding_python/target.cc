@@ -28,7 +28,9 @@ PyObject *CreateTargetObject(PyTypeObject *subtype,
 
 void DeleteTargetObject(PyObject *self) {
   TargetObject *tobj = reinterpret_cast<TargetObject *>(self);
+  Py_BEGIN_ALLOW_THREADS
   tobj->target.~TargetDirector();
+  Py_END_ALLOW_THREADS
   Py_XDECREF(tobj->container_object);
   Py_TYPE(self)->tp_free(self);
 }
