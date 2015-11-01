@@ -15,7 +15,7 @@ namespace python {
 
 struct LogonObject {
   PyObject_HEAD
-  std::unique_ptr<Logon> logon;
+  std::shared_ptr<Logon> logon;
 };
 
 int InitLogonTypes();

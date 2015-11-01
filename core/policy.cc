@@ -13,26 +13,28 @@
 #include "core/job_object.h"
 #include "core/logon.h"
 
+using std::make_shared;
 using std::make_unique;
 using std::remove;
+using std::shared_ptr;
 using std::vector;
 
 namespace winc {
 
-ResultCode Policy::GetLogon(Logon **out_logon) {
+ResultCode Policy::GetLogon(shared_ptr<Logon> *out_logon) {
   if (!logon_) {
-    auto logon = make_unique<CurrentLogon>();
+    auto logon = make_shared<CurrentLogon>();
     ResultCode rc = logon->Init(SECURITY_MANDATORY_LOW_RID);
     if (rc != WINC_OK)
       return rc;
     logon_ = move(logon);
   }
-  *out_logon = logon_.get();
+  *out_logon = logon_;
   return WINC_OK;
 }
 
-void Policy::SetLogon(std::unique_ptr<Logon> &logon) {
-  logon_ = move(logon);
+void Policy::SetLogon(const shared_ptr<Logon> &logon) {
+  logon_ = logon;
   restricted_token_.reset();
   alternate_desktop_.reset();
 }
@@ -51,7 +53,7 @@ void Policy::RemoveRestrictSid(const Sid &sid) {
 
 ResultCode Policy::GetRestrictedToken(HANDLE *out_token) {
   if (!restricted_token_) {
-    Logon *logon;
+    shared_ptr<Logon> logon;
     ResultCode rc = GetLogon(&logon);
     if (rc != WINC_OK)
       return rc;
@@ -80,7 +82,7 @@ ResultCode Policy::GetDesktop(Desktop **out_desktop) {
     *out_desktop = default_desktop_.get();
   } else {
     if (!alternate_desktop_) {
-      Logon *logon;
+      shared_ptr<Logon> logon;
       ResultCode rc = GetLogon(&logon);
       if (rc != WINC_OK)
         return rc;

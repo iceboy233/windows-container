@@ -147,6 +147,19 @@ int SetJobUILimitPolicyObject(PyObject *self,
   return 0;
 }
 
+PyObject *GetLogonPolicyObject(PyObject *self, void *closure) {
+  PolicyObject *pobj = reinterpret_cast<PolicyObject *>(self);
+  if (!pobj->policy) {
+    PyErr_SetString(PyExc_RuntimeError, "not initialized");
+    return NULL;
+  }
+  LogonObject *lobj = PyObject_New(LogonObject, &g_logon_type);
+  if (!lobj)
+    return NULL;
+  pobj->policy->GetLogon(&lobj->logon);
+  return reinterpret_cast<PyObject *>(lobj);
+}
+
 int SetLogonPolicyObject(PyObject *self, PyObject *value, void *closure) {
   PolicyObject *pobj = reinterpret_cast<PolicyObject *>(self);
   if (!pobj->policy) {
@@ -162,7 +175,7 @@ int SetLogonPolicyObject(PyObject *self, PyObject *value, void *closure) {
     PyErr_SetString(PyExc_RuntimeError, "logon object not initialized");
     return -1;
   }
-  pobj->policy->SetLogon(move(lobj->logon));
+  pobj->policy->SetLogon(lobj->logon);
   return 0;
 }
 
@@ -228,7 +241,7 @@ PyGetSetDef policy_getset[] = {
   {"use_desktop", GetUseDesktopPolicyObject, SetUseDesktopPolicyObject},
   {"job_basic_limit", GetJobBasicLimitPolicyObject, SetJobBasicLimitPolicyObject},
   {"job_ui_limit", GetJobUILimitPolicyObject, SetJobUILimitPolicyObject},
-  {"logon", NULL, SetLogonPolicyObject},
+  {"logon", GetLogonPolicyObject, SetLogonPolicyObject},
   {"restricted_sids", GetRestrictedSids, NULL},
   {NULL}
 };

@@ -12,8 +12,8 @@
 #include "bindings/binding_python/error.h"
 #include "bindings/binding_python/sid.h"
 
-using std::make_unique;
-using std::unique_ptr;
+using std::make_shared;
+using std::shared_ptr;
 
 namespace winc {
 
@@ -27,13 +27,13 @@ PyObject *CreateLogonObject(PyTypeObject *subtype,
   if (!obj)
     return NULL;
   LogonObject *lobj = reinterpret_cast<LogonObject *>(obj);
-  new (&lobj->logon) unique_ptr<Logon>;
+  new (&lobj->logon) shared_ptr<Logon>;
   return obj;
 }
 
 void DeleteLogonObject(PyObject *self) {
   LogonObject *lobj = reinterpret_cast<LogonObject *>(self);
-  lobj->logon.~unique_ptr();
+  lobj->logon.~shared_ptr();
   Py_TYPE(self)->tp_free(self);
 }
 
@@ -49,7 +49,7 @@ int InitCurrentLogonObject(PyObject *self, PyObject *args, PyObject *kwds) {
                                    &integrity_level_obj))
     return -1;
 
-  auto logon = make_unique<CurrentLogon>();
+  auto logon = make_shared<CurrentLogon>();
   ResultCode rc = logon->Init(integrity_level_obj);
   if (rc != WINC_OK) {
     SetErrorFromResultCode(rc);
@@ -70,7 +70,7 @@ int InitUserLogonObject(PyObject *self, PyObject *args, PyObject *kwds) {
                                    &integrity_level_obj))
     return -1;
 
-  auto logon = make_unique<UserLogon>();
+  auto logon = make_shared<UserLogon>();
   ResultCode rc = logon->Init(username, password, integrity_level_obj);
   if (rc != WINC_OK) {
     SetErrorFromResultCode(rc);

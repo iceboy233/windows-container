@@ -17,6 +17,7 @@
 #include "core/target.h"
 
 using std::make_unique;
+using std::shared_ptr;
 using std::unique_ptr;
 
 namespace winc {
@@ -158,7 +159,7 @@ ResultCode Container::Spawn(const wchar_t *exe_path,
 ResultCode Container::GetPolicy(Policy **out_policy) {
   if (!policy_) {
     auto policy = make_unique<Policy>();
-    Logon *logon;
+    shared_ptr<Logon> logon;
     ResultCode rc = policy->GetLogon(&logon);
     if (rc != WINC_OK)
       return rc;

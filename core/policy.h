@@ -28,8 +28,8 @@ public:
     {}
 
 public:
-  ResultCode GetLogon(Logon **out_logon);
-  void SetLogon(std::unique_ptr<Logon> &logon);
+  ResultCode GetLogon(std::shared_ptr<Logon> *out_logon);
+  void SetLogon(const std::shared_ptr<Logon> &logon);
   void AddRestrictSid(const Sid &sid);
   void RemoveRestrictSid(const Sid &sid);
 
@@ -78,7 +78,7 @@ private:
   DWORD job_ui_limit_;
   std::unique_ptr<DefaultDesktop> default_desktop_;
   std::unique_ptr<AlternateDesktop> alternate_desktop_;
-  std::unique_ptr<Logon> logon_;
+  std::shared_ptr<Logon> logon_;
   std::vector<Sid> restricted_sids_;
 };
 
