@@ -114,13 +114,14 @@ int wmain(int argc, wchar_t *argv[]) {
         !wcscmp(argv[arg_index], L"--memory")) {
       o.memory_limit = GetArg<uint32_t>(argv, arg_index, argc);
       if (verbose)
-        fwprintf(stderr, L"Setting memory limit to %u\n", o.memory_limit);
+        fwprintf(stderr, L"Setting memory limit to %" PRIuPTR "\n",
+                 o.memory_limit);
       continue;
     }
     if (!wcscmp(argv[arg_index], L"--affinity")) {
       o.processor_affinity = GetArg<uint32_t>(argv, arg_index, argc);
       if (verbose)
-        fwprintf(stderr, L"Setting processor affinity to %u\n",
+        fwprintf(stderr, L"Setting processor affinity to %" PRIuPTR "\n",
                  o.processor_affinity);
       continue;
     }

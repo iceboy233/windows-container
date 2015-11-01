@@ -190,7 +190,7 @@ void JobObject::DeassociateCompletionPort(Target *target) {
 DWORD WINAPI JobObject::MessageThread(PVOID param) {
   const ULONG ENTRY_PER_CALL = 16;
   JobObjectSharedResource *sr =
-    reinterpret_cast<JobObjectSharedResource *>(param);
+      reinterpret_cast<JobObjectSharedResource *>(param);
   OVERLAPPED_ENTRY entries[ENTRY_PER_CALL];
   ULONG actual_count;
   while (::GetQueuedCompletionStatusEx(sr->completion_port, entries,
@@ -203,7 +203,6 @@ DWORD WINAPI JobObject::MessageThread(PVOID param) {
       ::EnterCriticalSection(&sr->crit_sec);
       if (sr->attached_target.find(target) != sr->attached_target.end()) {
         DWORD message_id = entry->dwNumberOfBytesTransferred;
-        DWORD process_id;
         switch (message_id) {
         case JOB_OBJECT_MSG_ACTIVE_PROCESS_LIMIT:
           target->OnActiveProcessLimit();
@@ -212,17 +211,17 @@ DWORD WINAPI JobObject::MessageThread(PVOID param) {
           target->OnExitAll();
           break;
         case JOB_OBJECT_MSG_NEW_PROCESS:
-          process_id = reinterpret_cast<DWORD>(entry->lpOverlapped);
-          target->OnNewProcess(process_id);
+          target->OnNewProcess(static_cast<DWORD>(
+              reinterpret_cast<uintptr_t>(entry->lpOverlapped)));
           break;
         case JOB_OBJECT_MSG_EXIT_PROCESS:
         case JOB_OBJECT_MSG_ABNORMAL_EXIT_PROCESS:
-          process_id = reinterpret_cast<DWORD>(entry->lpOverlapped);
-          target->OnExitProcess(process_id);
+          target->OnExitProcess(static_cast<DWORD>(
+              reinterpret_cast<uintptr_t>(entry->lpOverlapped)));
           break;
         case JOB_OBJECT_MSG_JOB_MEMORY_LIMIT:
-          process_id = reinterpret_cast<DWORD>(entry->lpOverlapped);
-          target->OnMemoryLimit(process_id);
+          target->OnMemoryLimit(static_cast<DWORD>(
+              reinterpret_cast<uintptr_t>(entry->lpOverlapped)));
           break;
         }
       }
