@@ -12,6 +12,7 @@
 #include "bindings/binding_python/logon.h"
 #include "bindings/binding_python/sid.h"
 
+using std::shared_ptr;
 using std::vector;
 
 namespace winc {
@@ -156,6 +157,7 @@ PyObject *GetLogonPolicyObject(PyObject *self, void *closure) {
   LogonObject *lobj = PyObject_New(LogonObject, &g_logon_type);
   if (!lobj)
     return NULL;
+  new (&lobj->logon) shared_ptr<Logon>;
   pobj->policy->GetLogon(&lobj->logon);
   return reinterpret_cast<PyObject *>(lobj);
 }
@@ -221,6 +223,7 @@ PyObject *GetRestrictedSids(PyObject *self, void *closure) {
       Py_DECREF(tuple);
       return NULL;
     }
+    new (&sobj->sid) Sid;
     PyTuple_SetItem(tuple, index, reinterpret_cast<PyObject *>(sobj));
     ResultCode rc = sobj->sid.Init(sids[index].data());
     if (rc != WINC_OK) {

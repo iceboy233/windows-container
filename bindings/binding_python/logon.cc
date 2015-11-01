@@ -95,6 +95,7 @@ PyObject *GetUserSidLogonObject(PyObject *self, void *closure) {
   SidObject *sobj = PyObject_New(SidObject, &g_sid_type);
   if (!sobj)
     return NULL;
+  new (&sobj->sid) Sid;
   rc = sobj->sid.Init(sid);
   if (rc != WINC_OK) {
     Py_DECREF(sobj);
@@ -116,6 +117,7 @@ PyObject *GetGroupSidLogonObject(PyObject *self, void *closure) {
   SidObject *sobj = PyObject_New(SidObject, &g_sid_type);
   if (!sobj)
     return NULL;
+  new (&sobj->sid) Sid;
   rc = sobj->sid.Init(sid);
   if (rc != WINC_OK) {
     Py_DECREF(sobj);
