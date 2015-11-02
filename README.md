@@ -1,6 +1,8 @@
+# Windows Container
+
 This project provides a lightweight sandbox for Windows.
 
-# Build Instructions
+## Build Instructions
 
 Use Visual Studio 2015.
 
@@ -10,25 +12,25 @@ installation in your system. The build configuration needs to match the
 python installation (Debug/Release, 32/64bit). Both python 2 and 3 are
 supported.
 
-# Python Binding
+## Python Binding
 
 Download the latest release package, and copy `winc.pyd` into your Python
 `DLLs` directory.
 
 Example: launch cmd in a container.
 
-```import winc
-container = winc.Container()
-target = container.spawn(u'C:\\Windows\\system32\\cmd.exe')
-target.start().wait_for_process()```
+    import winc
+    container = winc.Container()
+    target = container.spawn(u'C:\\Windows\\system32\\cmd.exe')
+    target.start().wait_for_process()
 
 Try `whoami` in the launched cmd, should get `ERROR: Access is denied.`.
 
 You may enable the current user's identity and try again.
 
-```container.add_restricted_sid(container.logon.user_sid)```
+    container.add_restricted_sid(container.logon.user_sid)
 
-# Supported Operating Systems
+## Supported Operating Systems
 
 The following versions of operating systems are supported:
 * Windows Vista / 7 / 8 / 8.1 / 10
