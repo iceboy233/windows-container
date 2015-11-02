@@ -15,6 +15,8 @@ namespace python {
 struct ContainerObject {
   PyObject_HEAD
   Container container;
+  // Borrow reference from the container
+  Policy *policy;
 };
 
 int InitContainerType();

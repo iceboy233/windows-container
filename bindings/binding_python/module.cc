@@ -8,7 +8,6 @@
 #include "bindings/binding_python/error.h"
 #include "bindings/binding_python/container.h"
 #include "bindings/binding_python/target.h"
-#include "bindings/binding_python/policy.h"
 #include "bindings/binding_python/logon.h"
 #include "bindings/binding_python/sid.h"
 
@@ -47,7 +46,6 @@ PyMODINIT_FUNC initwinc() {
   InitErrorClass();
   InitContainerType();
   InitTargetType();
-  InitPolicyType();
   InitLogonTypes();
   InitSidType();
 
@@ -64,9 +62,6 @@ PyMODINIT_FUNC initwinc() {
   Py_INCREF(&g_target_type);
   PyModule_AddObject(module, "Target",
                      reinterpret_cast<PyObject *>(&g_target_type));
-  Py_INCREF(&g_policy_type);
-  PyModule_AddObject(module, "Policy",
-                     reinterpret_cast<PyObject *>(&g_policy_type));
   Py_INCREF(&g_logon_type);
   PyModule_AddObject(module, "Logon",
                      reinterpret_cast<PyObject *>(&g_logon_type));

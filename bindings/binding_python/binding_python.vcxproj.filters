@@ -5,7 +5,6 @@
     <ClCompile Include="container.cc" />
     <ClCompile Include="error.cc" />
     <ClCompile Include="target.cc" />
-    <ClCompile Include="policy.cc" />
     <ClCompile Include="logon.cc" />
     <ClCompile Include="sid.cc" />
   </ItemGroup>
@@ -13,7 +12,6 @@
     <ClInclude Include="error.h" />
     <ClInclude Include="container.h" />
     <ClInclude Include="target.h" />
-    <ClInclude Include="policy.h" />
     <ClInclude Include="logon.h" />
     <ClInclude Include="sid.h" />
   </ItemGroup>

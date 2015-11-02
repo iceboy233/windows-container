@@ -6,10 +6,16 @@
 
 #include <Python.h>
 #include <winc.h>
+#include <memory>
+#include <vector>
 
 #include "bindings/binding_python/error.h"
+#include "bindings/binding_python/logon.h"
+#include "bindings/binding_python/sid.h"
 #include "bindings/binding_python/target.h"
-#include "bindings/binding_python/policy.h"
+
+using std::shared_ptr;
+using std::vector;
 
 namespace winc {
 
@@ -24,6 +30,13 @@ PyObject *CreateContainerObject(PyTypeObject *subtype,
     return NULL;
   ContainerObject *cobj = reinterpret_cast<ContainerObject *>(obj);
   new (&cobj->container) Container;
+  ResultCode rc = cobj->container.GetPolicy(&cobj->policy);
+  if (rc != WINC_OK) {
+    cobj->container.~Container();
+    subtype->tp_free(obj);
+    SetErrorFromResultCode(rc);
+    return NULL;
+  }
   return obj;
 }
 
@@ -31,6 +44,178 @@ void DeleteContainerObject(PyObject *self) {
   ContainerObject *cobj = reinterpret_cast<ContainerObject *>(self);
   cobj->container.~Container();
   Py_TYPE(self)->tp_free(self);
+}
+
+PyObject *GetUseDesktopPolicyObject(PyObject *self, void *closure) {
+  ContainerObject *cobj = reinterpret_cast<ContainerObject *>(self);
+  if (!cobj->policy) {
+    PyErr_SetString(PyExc_RuntimeError, "not initialized");
+    return NULL;
+  }
+  return PyBool_FromLong(cobj->policy->use_desktop());
+}
+
+int SetUseDesktopPolicyObject(PyObject *self,
+                              PyObject *value, void *closure) {
+  ContainerObject *cobj = reinterpret_cast<ContainerObject *>(self);
+  if (!cobj->policy) {
+    PyErr_SetString(PyExc_RuntimeError, "not initialized");
+    return -1;
+  }
+  if (!PyBool_Check(value)) {
+    PyErr_SetString(PyExc_TypeError, "bool expected");
+    return -1;
+  }
+  cobj->policy->set_use_desktop(value == Py_True);
+  return 0;
+}
+
+PyObject *GetJobBasicLimitPolicyObject(PyObject *self, void *closure) {
+  ContainerObject *cobj = reinterpret_cast<ContainerObject *>(self);
+  if (!cobj->policy) {
+    PyErr_SetString(PyExc_RuntimeError, "not initialized");
+    return NULL;
+  }
+  return PyLong_FromUnsignedLong(cobj->policy->job_basic_limit());
+}
+
+int SetJobBasicLimitPolicyObject(PyObject *self,
+                                 PyObject *value, void *closure) {
+  ContainerObject *cobj = reinterpret_cast<ContainerObject *>(self);
+  if (!cobj->policy) {
+    PyErr_SetString(PyExc_RuntimeError, "not initialized");
+    return -1;
+  }
+#if PY_MAJOR_VERSION >= 3
+  if (!PyLong_Check(value)) {
+#else
+  if (!PyInt_Check(value) && !PyLong_Check(value)) {
+#endif
+    PyErr_SetString(PyExc_TypeError, "integer expected");
+    return -1;
+  }
+  unsigned long ulong_val = PyLong_AsUnsignedLong(value);
+  if (ulong_val == static_cast<unsigned long>(-1) && PyErr_Occurred())
+    return -1;
+  cobj->policy->set_job_basic_limit(ulong_val);
+  return 0;
+}
+
+PyObject *GetJobUILimitPolicyObject(PyObject *self, void *closure) {
+  ContainerObject *cobj = reinterpret_cast<ContainerObject *>(self);
+  if (!cobj->policy) {
+    PyErr_SetString(PyExc_RuntimeError, "not initialized");
+    return NULL;
+  }
+  return PyLong_FromUnsignedLong(cobj->policy->job_ui_limit());
+}
+
+int SetJobUILimitPolicyObject(PyObject *self,
+                              PyObject *value, void *closure) {
+  ContainerObject *cobj = reinterpret_cast<ContainerObject *>(self);
+  if (!cobj->policy) {
+    PyErr_SetString(PyExc_RuntimeError, "not initialized");
+    return -1;
+  }
+#if PY_MAJOR_VERSION >= 3
+  if (!PyLong_Check(value)) {
+#else
+  if (!PyInt_Check(value) && !PyLong_Check(value)) {
+#endif
+    PyErr_SetString(PyExc_TypeError, "integer expected");
+    return -1;
+  }
+  unsigned long ulong_val = PyLong_AsUnsignedLong(value);
+  if (ulong_val == static_cast<unsigned long>(-1) && PyErr_Occurred())
+    return -1;
+  cobj->policy->set_job_ui_limit(ulong_val);
+  return 0;
+}
+
+PyObject *GetLogonPolicyObject(PyObject *self, void *closure) {
+  ContainerObject *cobj = reinterpret_cast<ContainerObject *>(self);
+  if (!cobj->policy) {
+    PyErr_SetString(PyExc_RuntimeError, "not initialized");
+    return NULL;
+  }
+  LogonObject *lobj = PyObject_New(LogonObject, &g_logon_type);
+  if (!lobj)
+    return NULL;
+  new (&lobj->logon) shared_ptr<Logon>;
+  cobj->policy->GetLogon(&lobj->logon);
+  return reinterpret_cast<PyObject *>(lobj);
+}
+
+int SetLogonPolicyObject(PyObject *self, PyObject *value, void *closure) {
+  ContainerObject *cobj = reinterpret_cast<ContainerObject *>(self);
+  if (!cobj->policy) {
+    PyErr_SetString(PyExc_RuntimeError, "not initialized");
+    return -1;
+  }
+  if (!PyType_IsSubtype(Py_TYPE(value), &g_logon_type)) {
+    PyErr_SetString(PyExc_TypeError, "logon object required");
+    return -1;
+  }
+  LogonObject *lobj = reinterpret_cast<LogonObject *>(value);
+  if (!lobj->logon) {
+    PyErr_SetString(PyExc_RuntimeError, "logon object not initialized");
+    return -1;
+  }
+  cobj->policy->SetLogon(lobj->logon);
+  return 0;
+}
+
+PyObject *AddRestrictedSidPolicyObject(PyObject *self, PyObject *args) {
+  SidObject *sobj;
+  if (!PyArg_ParseTuple(args, "O!", &g_sid_type, &sobj))
+    return NULL;
+  ContainerObject *cobj = reinterpret_cast<ContainerObject *>(self);
+  if (!cobj->policy) {
+    PyErr_SetString(PyExc_RuntimeError, "not initialized");
+    return NULL;
+  }
+  cobj->policy->AddRestrictSid(sobj->sid);
+  Py_RETURN_NONE;
+}
+
+PyObject *RemoveRestrictedSidPolicyObject(PyObject *self, PyObject *args) {
+  SidObject *sobj;
+  if (!PyArg_ParseTuple(args, "O!", &g_sid_type, &sobj))
+    return NULL;
+  ContainerObject *cobj = reinterpret_cast<ContainerObject *>(self);
+  if (!cobj->policy) {
+    PyErr_SetString(PyExc_RuntimeError, "not initialized");
+    return NULL;
+  }
+  cobj->policy->RemoveRestrictSid(sobj->sid);
+  Py_RETURN_NONE;
+}
+
+PyObject *GetRestrictedSids(PyObject *self, void *closure) {
+  ContainerObject *cobj = reinterpret_cast<ContainerObject *>(self);
+  if (!cobj->policy) {
+    PyErr_SetString(PyExc_RuntimeError, "not initialized");
+    return NULL;
+  }
+  vector<Sid> sids = cobj->policy->restricted_sids();
+  PyObject *tuple = PyTuple_New(sids.size());
+  if (!tuple)
+    return NULL;
+  for (size_t index = 0; index < sids.size(); ++index) {
+    SidObject *sobj = PyObject_New(SidObject, &g_sid_type);
+    if (!sobj) {
+      Py_DECREF(tuple);
+      return NULL;
+    }
+    new (&sobj->sid) Sid;
+    PyTuple_SetItem(tuple, index, reinterpret_cast<PyObject *>(sobj));
+    ResultCode rc = sobj->sid.Init(sids[index].data());
+    if (rc != WINC_OK) {
+      Py_DECREF(tuple);
+      return SetErrorFromResultCode(rc);
+    }
+  }
+  return tuple;
 }
 
 void *GetOptionalPointer(PyObject *object) {
@@ -155,20 +340,21 @@ PyObject *SpawnContainerObject(PyObject *self,
   return target;
 }
 
-PyObject *GetPolicyContainerObject(PyObject *self, void *closure) {
-  return PyObject_CallFunctionObjArgs(reinterpret_cast<PyObject *>(&g_policy_type),
-                                      self, NULL);
-}
-
 PyMethodDef container_methods[] = {
   {"spawn",
    reinterpret_cast<PyCFunction>(SpawnContainerObject),
    METH_VARARGS | METH_KEYWORDS},
+  {"add_restricted_sid", AddRestrictedSidPolicyObject, METH_VARARGS},
+  {"remove_restricted_sid", RemoveRestrictedSidPolicyObject, METH_VARARGS},
   {NULL}
 };
 
 PyGetSetDef container_getset[] = {
-  {"policy", GetPolicyContainerObject, NULL},
+  {"use_desktop", GetUseDesktopPolicyObject, SetUseDesktopPolicyObject},
+  {"job_basic_limit", GetJobBasicLimitPolicyObject, SetJobBasicLimitPolicyObject},
+  {"job_ui_limit", GetJobUILimitPolicyObject, SetJobUILimitPolicyObject},
+  {"logon", GetLogonPolicyObject, SetLogonPolicyObject},
+  {"restricted_sids", GetRestrictedSids, NULL},
   {NULL}
 };
 
