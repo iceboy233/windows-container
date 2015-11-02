@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "core/logon.h"
+#include <winc/logon.h>
 
 #include <Windows.h>
 #include <malloc.h>
 #include <vector>
 
-#include "core/sid.h"
+#include <winc/sid.h>
 
 using namespace std;
 

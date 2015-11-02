@@ -6,11 +6,11 @@
 #define WINC_H_
 
 #include <winc_types.h>
-
-#include "core/container.h"
-#include "core/policy.h"
-#include "core/target.h"
-#include "core/logon.h"
-#include "core/sid.h"
+#include <winc/container.h>
+#include <winc/logon.h>
+#include <winc/policy.h>
+#include <winc/sid.h>
+#include <winc/target.h>
+#include <winc/util.h>
 
 #endif

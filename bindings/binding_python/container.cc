@@ -7,7 +7,6 @@
 #include <Python.h>
 #include <winc.h>
 
-#include "core/util.h"
 #include "bindings/binding_python/error.h"
 #include "bindings/binding_python/target.h"
 #include "bindings/binding_python/policy.h"

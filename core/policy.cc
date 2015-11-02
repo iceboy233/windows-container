@@ -2,16 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "core/policy.h"
+#include <winc/policy.h>
 
 #include <Windows.h>
 #include <algorithm>
 #include <memory>
 #include <vector>
 
-#include "core/desktop.h"
+#include <winc/desktop.h>
+#include <winc/logon.h>
 #include "core/job_object.h"
-#include "core/logon.h"
 
 using std::make_shared;
 using std::make_unique;

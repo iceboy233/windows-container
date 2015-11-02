@@ -9,7 +9,7 @@
 #include <memory>
 
 #include <winc_types.h>
-#include "core/util.h"
+#include <winc/util.h>
 
 namespace winc {
 

@@ -6,6 +6,7 @@
 
 #include <Python.h>
 #include <Sddl.h>
+#include <winc.h>
 #include <string>
 
 #include "bindings/binding_python/error.h"

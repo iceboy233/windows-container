@@ -19,15 +19,15 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="container.h" />
-    <ClInclude Include="desktop.h" />
+    <ClInclude Include="..\include\winc\container.h" />
+    <ClInclude Include="..\include\winc\desktop.h" />
+    <ClInclude Include="..\include\winc\logon.h" />
+    <ClInclude Include="..\include\winc\policy.h" />
+    <ClInclude Include="..\include\winc\sid.h" />
+    <ClInclude Include="..\include\winc\target.h" />
+    <ClInclude Include="..\include\winc\util.h" />
     <ClInclude Include="job_object.h" />
-    <ClInclude Include="logon.h" />
     <ClInclude Include="ntnative.h" />
-    <ClInclude Include="sid.h" />
-    <ClInclude Include="policy.h" />
-    <ClInclude Include="target.h" />
-    <ClInclude Include="util.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="desktop.cc" />

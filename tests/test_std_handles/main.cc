@@ -11,7 +11,6 @@
 #include <memory>
 
 #include <winc.h>
-#include "core/util.h"
 
 using namespace std;
 using namespace winc;

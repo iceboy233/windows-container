@@ -6,8 +6,8 @@
 
 #include <unordered_set>
 
-#include "core/container.h"
-#include "core/target.h"
+#include <winc/container.h>
+#include <winc/target.h>
 
 using std::unordered_set;
 

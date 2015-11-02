@@ -10,8 +10,8 @@
 #include <string>
 
 #include <winc_types.h>
-#include "core/sid.h"
-#include "core/util.h"
+#include <winc/sid.h>
+#include <winc/util.h>
 
 namespace winc {
 

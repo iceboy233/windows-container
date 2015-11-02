@@ -9,9 +9,9 @@
 #include <memory>
 #include <vector>
 
-#include "core/desktop.h"
-#include "core/logon.h"
-#include "core/util.h"
+#include <winc/desktop.h>
+#include <winc/logon.h>
+#include <winc/util.h>
 
 namespace winc {
 

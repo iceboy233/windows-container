@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "core/desktop.h"
+#include <winc/desktop.h>
 
 #include <vector>
 #include <cstring>

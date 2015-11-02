@@ -2,19 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "core/container.h"
+#include <winc/container.h>
 
 #include <Windows.h>
 #include <memory>
 
 #include <winc_types.h>
+#include <winc/desktop.h>
+#include <winc/logon.h>
+#include <winc/policy.h>
+#include <winc/target.h>
+#include <winc/util.h>
 #include "core/ntnative.h"
-#include "core/policy.h"
-#include "core/desktop.h"
 #include "core/job_object.h"
-#include "core/util.h"
-#include "core/logon.h"
-#include "core/target.h"
 
 using std::make_unique;
 using std::shared_ptr;

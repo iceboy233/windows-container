@@ -1,15 +1,15 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClInclude Include="container.h" />
-    <ClInclude Include="policy.h" />
-    <ClInclude Include="desktop.h" />
     <ClInclude Include="job_object.h" />
-    <ClInclude Include="util.h" />
-    <ClInclude Include="logon.h" />
-    <ClInclude Include="target.h" />
     <ClInclude Include="ntnative.h" />
-    <ClInclude Include="sid.h" />
+    <ClInclude Include="..\include\winc\container.h" />
+    <ClInclude Include="..\include\winc\logon.h" />
+    <ClInclude Include="..\include\winc\policy.h" />
+    <ClInclude Include="..\include\winc\sid.h" />
+    <ClInclude Include="..\include\winc\target.h" />
+    <ClInclude Include="..\include\winc\util.h" />
+    <ClInclude Include="..\include\winc\desktop.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="container.cc" />
