@@ -12,7 +12,7 @@
 #include <vector>
 #include <winc.h>
 
-using std::make_shared;
+using std::shared_ptr;
 using std::vector;
 using namespace winc;
 
@@ -106,21 +106,17 @@ int wmain(int argc, wchar_t *argv[]) {
       continue;
     }
     if (!wcscmp(argv[arg_index], L"--use-logon")) {
-      auto current_logon = make_shared<CurrentLogon>();
-      rc = current_logon->Init(SECURITY_MANDATORY_LOW_RID);
+      shared_ptr<Logon> logon;
+      rc = p->GetLogon(&logon);
       if (rc != WINC_OK)
         PrintErrorAndExit(rc);
-      Sid *current_logon_sid;
-      rc = current_logon->GetUserSid(&current_logon_sid);
-      if (rc != WINC_OK)
-        PrintErrorAndExit(rc);
+      Sid *logon_sid;
+      rc = logon->GetUserSid(&logon_sid);
       auto &restricted_sids = p->restricted_sids();
-      if (find(restricted_sids.begin(),
-               restricted_sids.end(),
-               *current_logon_sid) == restricted_sids.end()) {
-        p->AddRestrictSid(*current_logon_sid);
+      if (find(restricted_sids.begin(), restricted_sids.end(), *logon_sid)
+          == restricted_sids.end()) {
+        p->AddRestrictSid(*logon_sid);
       }
-      p->SetLogon(current_logon);
       continue;
     }
     if (!wcscmp(argv[arg_index], L"--active-process")) {
