@@ -34,11 +34,11 @@ public:
     return ::GetLengthSid(data());
   }
 
-  bool operator==(const Sid &other) {
+  bool operator==(const Sid &other) const {
     return ::EqualSid(data(), other.data()) != 0;
   }
 
-  bool operator!=(const Sid &other) {
+  bool operator!=(const Sid &other) const {
     return !operator==(other);
   }
 

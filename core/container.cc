@@ -117,7 +117,9 @@ ResultCode Container::Spawn(const wchar_t *exe_path,
     options ? options->command_line : NULL,
     NULL, NULL, inherit_count ? TRUE : FALSE,
     CREATE_BREAKAWAY_FROM_JOB | CREATE_SUSPENDED,
-    NULL, NULL, &si.StartupInfo, &pi);
+    NULL,
+    options ? options->current_directory : NULL,
+    &si.StartupInfo, &pi);
   if (!success) {
     if (::GetLastError() == ERROR_PRIVILEGE_NOT_HELD)
       return WINC_PRIVILEGE_NOT_HELD;

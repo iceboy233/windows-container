@@ -257,23 +257,26 @@ HANDLE GetInheritableHandle(PyObject *handle, unique_handle *out_holder) {
 PyObject *SpawnContainerObject(PyObject *self,
                                PyObject *args, PyObject *kwds) {
   static char *kwlist[] = {"exe_path", "target",
-                           "command_line", "processor_affinity",
+                           "command_line", "current_directory",
+                           "processor_affinity",
                            "memory_limit", "active_process_limit",
                            "stdin_handle", "stdout_handle", "stderr_handle",
                            NULL};
   Py_UNICODE *exe_path;
   PyObject *target = NULL;
   Py_UNICODE *command_line = NULL;
+  Py_UNICODE *current_directory = NULL;
   PyObject *processor_affinity = NULL;
   PyObject *memory_limit = NULL;
   unsigned int active_process_limit = 0;
   PyObject *stdin_handle = NULL;
   PyObject *stdout_handle = NULL;
   PyObject *stderr_handle = NULL;
-  if (!PyArg_ParseTupleAndKeywords(args, kwds, "u|O!uOOIOOO", kwlist,
+  if (!PyArg_ParseTupleAndKeywords(args, kwds, "u|O!uuOOIOOO", kwlist,
                                    &exe_path,
                                    &g_target_type, &target,
                                    &command_line,
+                                   &current_directory,
                                    &processor_affinity,
                                    &memory_limit,
                                    &active_process_limit,
@@ -298,6 +301,7 @@ PyObject *SpawnContainerObject(PyObject *self,
   unique_handle stdin_holder, stdout_holder, stderr_holder;
   SpawnOptions options = {};
   options.command_line = command_line;
+  options.current_directory = current_directory;
   if (!(options.processor_affinity = reinterpret_cast<uintptr_t>(
       GetOptionalPointer(processor_affinity))) && PyErr_Occurred()) {
     Py_DECREF(target);

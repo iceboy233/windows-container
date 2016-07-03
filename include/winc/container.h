@@ -23,6 +23,9 @@ struct SpawnOptions {
   // the Windows API requirement
   wchar_t *command_line;
 
+  // Current directory for execution
+  const wchar_t *current_directory;
+
   uintptr_t processor_affinity;
   uintptr_t memory_limit;
   uint32_t active_process_limit;
