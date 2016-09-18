@@ -94,7 +94,7 @@ ResultCode Container::Spawn(const wchar_t *exe_path,
       si.StartupInfo.hStdOutput = options->stdout_handle;
       inherit_list[inherit_count++] = options->stdout_handle;
     }
-    if (options->stdin_handle) {
+    if (options->stderr_handle) {
       si.StartupInfo.dwFlags |= STARTF_USESTDHANDLES;
       si.StartupInfo.hStdError = options->stderr_handle;
       inherit_list[inherit_count++] = options->stderr_handle;
