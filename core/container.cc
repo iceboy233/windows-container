@@ -145,7 +145,7 @@ ResultCode Container::Spawn(const wchar_t *exe_path,
                                        NULL);
   if (!NT_SUCCESS(status))
     return WINC_ERROR_SPAWN;
-  default_hard_error_mode &= ~1;
+  default_hard_error_mode &= ~SEM_FAILCRITICALERRORS;
   status = ::NtSetInformationProcess(pi.hProcess,
                                      ProcessDefaultHardErrorMode,
                                      &default_hard_error_mode,
