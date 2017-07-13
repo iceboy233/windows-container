@@ -8,7 +8,6 @@ Build Instructions
 ==================
 
 Use Visual Studio 2015.
-
   To build the python binding, set the ``PYTHON_INCLUDE`` and ``PYTHON_LIB``
   environment variable to the ``include`` and ``libs`` directory of a python
   installation in your system. The build configuration needs to match the
@@ -16,7 +15,6 @@ Use Visual Studio 2015.
   supported.
 
 Use ``setup.py``
-
   For python 3.5+, use ``python setup.py build`` to build and ``python setup.py install`` to install
 
 Python Binding
