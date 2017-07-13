@@ -1,4 +1,5 @@
-from distutils.core import setup, Extension
+from setuptools import setup
+from setuptools.extension import Extension
 from glob import glob
 
 def read_readme():
