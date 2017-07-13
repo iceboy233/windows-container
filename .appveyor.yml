@@ -1,2 +1,6 @@
 build_script:
+  - C:\python36\python setup.py sdist
   - ps: .\.appveyor.ps1
+artifacts:
+  - path: 'dist\*'
+    name: dists
