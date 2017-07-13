@@ -1,5 +1,4 @@
 from distutils.core import setup, Extension
-from os import path
 from glob import glob
 
 setup(
@@ -12,18 +11,19 @@ setup(
                 # FIXME: _HAS_EXCEPTIONS only has effect when /MT
                 # But python builds it with /MD
                 # ('_HAS_EXCEPTIONS', '0'),
-                # For future?
-                ('BINDING_PYTHON_EXPORTS', None),
-                # Use UNICODE
-                ('_UNICODE', None),
-                ('UNICODE', None)],
+            ],
             include_dirs = [
                 'include',
-                '.'],
+                '.'
+            ],
             libraries = [
-                'Advapi32',
-                'Ntdll',
-                'User32',
-                'Psapi'],
-            sources = glob(path.join('core', '*.cc')) +
-                      glob(path.join('bindings', 'binding_python', '*.cc')))])
+                'advapi32',
+                'ntdll',
+                'user32',
+                'psapi'
+            ],
+            sources = glob('core/*.cc') +
+                      glob('bindings/binding_python/*.cc')
+        )
+    ]
+)
