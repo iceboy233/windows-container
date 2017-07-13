@@ -1,6 +1,10 @@
 from distutils.core import setup, Extension
 from glob import glob
 
+def read_readme():
+    with open('README.rst', 'r') as f:
+        return f.read()
+
 setup(
     name = 'windows-container',
     ext_modules = [
@@ -25,5 +29,6 @@ setup(
             sources = glob('core/*.cc') +
                       glob('bindings/binding_python/*.cc')
         )
-    ]
+    ],
+    long_description = read_readme()
 )

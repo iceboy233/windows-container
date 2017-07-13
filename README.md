@@ -12,10 +12,11 @@ installation in your system. The build configuration needs to match the
 python installation (Debug/Release, 32/64bit). Both python 2 and 3 are
 supported.
 
-## Python Binding
+Use `setup.py`
 
-Download the latest release package, and copy `winc.pyd` into your Python
-`DLLs` directory.
+For python 3.5+, use `python setup.py build` to build and `python setup.py install` to install
+
+## Python Binding
 
 Example: launch cmd in a container.
 
