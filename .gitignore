@@ -10,3 +10,11 @@
 Debug/
 Release/
 x64/
+
+# Python Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+# other files
+*~
